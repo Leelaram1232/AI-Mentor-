@@ -9,8 +9,11 @@ import ProgressBar from '@/components/Layout/ProgressBar';
 import useCareerStore from '@/store/careerStore';
 import { generateRelatedCareerNodes } from '@/utils/groqApi';
 
+import { useAuth } from '@/components/Auth/AuthProvider';
+
 export default function BubbleGraph() {
     const router = useRouter();
+    const { user } = useAuth();
     const { userData, saveProfileToSupabase } = useCareerStore();
     const [centerNode, setCenterNode] = useState(userData.selectedRole?.title || userData.currentRole || 'Professional');
     const [surroundingNodes, setSurroundingNodes] = useState([]);
@@ -38,7 +41,18 @@ export default function BubbleGraph() {
     }, [centerNode]);
 
     const handleFinish = async () => {
-        router.push('/onboarding/signup');
+        if (user) {
+            setIsSaving(true);
+            try {
+                await saveProfileToSupabase();
+                router.push('/dashboard');
+            } catch (err) {
+                console.error(err);
+                router.push('/dashboard');
+            }
+        } else {
+            router.push('/onboarding/signup');
+        }
     };
 
     const containerVariants = {
@@ -227,7 +241,7 @@ export default function BubbleGraph() {
                     }}
                 >
                     {isSaving && <CircularProgress size={20} sx={{ color: '#fff' }} />}
-                    {isSaving ? 'Saving Your Profile...' : 'Go to Account Home'}
+                    {isSaving ? 'Saving Profile...' : user ? 'Save & Go to Dashboard' : 'Create Account to Save'}
                 </button>
             </Box>
         </Box>
