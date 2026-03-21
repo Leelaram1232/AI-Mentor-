@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Box, Container, CircularProgress, Typography } from '@mui/material';
 import Button from '@/components/UI/Button';
+import ProgressBar from '@/components/Layout/ProgressBar';
 import useCareerStore from '@/store/careerStore';
 import { generateRelatedCareerNodes } from '@/utils/groqApi';
 
@@ -37,15 +38,7 @@ export default function BubbleGraph() {
     }, [centerNode]);
 
     const handleFinish = async () => {
-        setIsSaving(true);
-        try {
-            await saveProfileToSupabase();
-            router.push('/dashboard');
-        } catch (error) {
-            console.error('Final save failed:', error);
-            // Even if save fails, let them proceed but log it
-            router.push('/dashboard');
-        }
+        router.push('/onboarding/signup');
     };
 
     const containerVariants = {
@@ -75,14 +68,23 @@ export default function BubbleGraph() {
     return (
         <Box sx={{ 
             minHeight: '100vh', 
-            background: '#fff', 
+            background: 'transparent', 
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            position: 'relative'
+            position: 'relative',
+            pt: 4
         }}>
+            <Container maxWidth="md" sx={{ zIndex: 1, position: 'relative' }}>
+                <ProgressBar
+                    currentStep={3}
+                    totalSteps={5}
+                    steps={['Role', 'Profile', 'Skills', 'Paths', 'Signup']}
+                />
+            </Container>
+
             {/* Background Dots */}
             <Box sx={{
                 position: 'fixed',

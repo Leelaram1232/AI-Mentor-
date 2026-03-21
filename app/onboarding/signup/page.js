@@ -53,7 +53,7 @@ export default function OnboardingSignup() {
         }
       });
       
-      router.push('/onboarding/bubble-graph');
+      router.push('/dashboard');
     } catch (err) {
       setError(err?.message || 'Sign up failed.');
     } finally {
@@ -66,9 +66,9 @@ export default function OnboardingSignup() {
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', bgcolor: 'transparent', py: 8 }}>
       <Container maxWidth="sm">
         <ProgressBar
-          currentStep={5}
-          totalSteps={6}
-          steps={['About', 'Skills', 'Path', 'Goal', 'Social', 'Signup']}
+          currentStep={4}
+          totalSteps={5}
+          steps={['Role', 'Profile', 'Skills', 'Paths', 'Signup']}
         />
         
         <Box sx={{ textAlign: 'center', mb: 5, mt: 4 }}>

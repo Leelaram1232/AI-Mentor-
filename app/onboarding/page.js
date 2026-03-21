@@ -55,7 +55,7 @@ export default function OnboardingLanding() {
                     transition={{ delay: 0.6, duration: 0.4 }}
                 >
                     <Button
-                        onClick={() => router.push('/onboarding/step1')}
+                        onClick={() => router.push('/onboarding/role-input')}
                         fullWidth
                         sx={{ maxWidth: 400, margin: '0 auto' }}
                     >

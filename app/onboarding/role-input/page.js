@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Box, Container } from '@mui/material';
 import Input from '@/components/UI/Input';
 import Button from '@/components/UI/Button';
+import ProgressBar from '@/components/Layout/ProgressBar';
 import useCareerStore from '@/store/careerStore';
 
 export default function RoleInput() {
@@ -17,14 +18,17 @@ export default function RoleInput() {
         if (!role.trim()) return;
         updateUserData('currentRole', role.trim());
         nextStep();
-        router.push('/onboarding/step2');
+        router.push('/onboarding/profile');
     };
 
-
-
     return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: '#fff' }}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: 'transparent' }}>
             <Container maxWidth="md">
+                <ProgressBar
+                    currentStep={0}
+                    totalSteps={5}
+                    steps={['Role', 'Profile', 'Skills', 'Paths', 'Signup']}
+                />
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}

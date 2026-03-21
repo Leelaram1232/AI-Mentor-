@@ -48,13 +48,25 @@ export default function SkillSelection() {
     };
 
     const handleContinue = () => {
-        updateUserData('skills', selectedSkills);
+        updateUserData('skills', selectedSkills.filter((s) => skills.includes(s)));
+        updateUserData('customSkills', selectedSkills.filter((s) => !skills.includes(s)));
+        nextStep();
         router.push('/onboarding/bubble-graph');
     };
 
+    const handleBack = () => {
+        previousStep();
+        router.push('/onboarding/profile');
+    };
+
     return (
-        <Box sx={{ minHeight: '100vh', py: 8, background: '#fff' }}>
+        <Box sx={{ minHeight: '100vh', py: 8, background: 'transparent' }}>
             <Container maxWidth="md">
+                <ProgressBar
+                    currentStep={2}
+                    totalSteps={5}
+                    steps={['Role', 'Profile', 'Skills', 'Paths', 'Signup']}
+                />
                 <Box sx={{ textAlign: 'center', mb: 8 }}>
                     <h1 className="onboarding-header">
                         Select your skills
