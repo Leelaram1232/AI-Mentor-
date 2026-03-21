@@ -171,14 +171,14 @@ nextjs-portal,
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--text-primary);
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
 }
 
 .onboarding-subtitle {
   font-size: 1.1rem;
-  color: #64748b;
+  color: var(--text-secondary);
   margin-bottom: 2.5rem;
 }
 .btn-ce:active { transform: scale(0.95); }
@@ -221,6 +221,14 @@ nextjs-portal,
 }
 .custom-input-ce:hover { border-color: var(--border-color-focus); }
 .custom-input-ce:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 4px var(--primary-blue-light); }
+.custom-input-ce:-webkit-autofill,
+.custom-input-ce:-webkit-autofill:hover, 
+.custom-input-ce:-webkit-autofill:focus, 
+.custom-input-ce:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px var(--input-bg) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
 .floating-label-ce {
   position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%);
   color: var(--text-secondary); font-size: 1.05rem;
