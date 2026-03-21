@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Box, Container, CircularProgress } from '@mui/material';
 import Button from '@/components/UI/Button';
 import ProgressBar from '@/components/Layout/ProgressBar';
+import SkillPicker from '@/components/UI/SkillPicker';
 import useCareerStore from '@/store/careerStore';
 import { generateSkillSuggestions } from '@/utils/groqApi';
 
@@ -14,20 +15,20 @@ export default function SkillSelection() {
     const { userData, updateUserData, aiSuggestions, updateAISuggestions, nextStep, previousStep } = useCareerStore();
     const [skills, setSkills] = useState(aiSuggestions.skillSuggestions || []);
     const [loading, setLoading] = useState(false);
-    const [selectedSkills, setSelectedSkills] = useState(userData.skills || []);
+    const [selectedSkills, setSelectedSkills] = useState([...(userData.skills || []), ...(userData.customSkills || [])]);
 
     useEffect(() => {
         if (skills.length === 0 && (userData.selectedRole || userData.currentRole)) {
             fetchSkills();
         }
-    }, []);
+    }, [userData.selectedRole, userData.currentRole]);
 
     const fetchSkills = async () => {
         setLoading(true);
         try {
             const context = {
-                currentSelf: userData.currentRole,
-                futureGoals: userData.selectedRole?.title || 'Growth',
+                currentSelf: userData.currentRole || userData.currentSelf,
+                futureGoals: userData.selectedRole?.title || userData.futureGoals || 'Growth',
                 experience: []
             };
             const suggested = await generateSkillSuggestions(context);
@@ -37,14 +38,6 @@ export default function SkillSelection() {
             console.error('Error fetching skills:', error);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const toggleSkill = (skill) => {
-        if (selectedSkills.includes(skill)) {
-            setSelectedSkills(selectedSkills.filter(s => s !== skill));
-        } else {
-            setSelectedSkills([...selectedSkills, skill]);
         }
     };
 
@@ -68,86 +61,64 @@ export default function SkillSelection() {
                     totalSteps={5}
                     steps={['Role', 'Profile', 'Skills', 'Paths', 'Signup']}
                 />
-                <Box sx={{ textAlign: 'center', mb: 8 }}>
-                    <h1 className="onboarding-header">
-                        Select your skills
-                    </h1>
-                    <p className="onboarding-subtitle">
-                        Choose the skills you already know
-                    </p>
-                </Box>
-
-                {loading ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10 }}>
-                        <CircularProgress size={60} thickness={4} sx={{ color: '#2563eb' }} />
-                        <p style={{ marginTop: '20px', color: '#64748b', fontSize: '1.1rem' }}>AI is mapping relevant skills...</p>
+                
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <Box sx={{ textAlign: 'center', mb: 8 }}>
+                        <h1 className="onboarding-header">
+                            Select your skills
+                        </h1>
+                        <p className="onboarding-subtitle">
+                            Choose or type the skills you already know
+                        </p>
                     </Box>
-                ) : (
-                    <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-                        <Box sx={{ 
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: { xs: 1.5, md: 2 }, 
-                            justifyContent: 'center',
-                            mb: 8
-                        }}>
-                            {skills.map((skill, index) => {
-                                const isSelected = selectedSkills.includes(skill);
-                                return (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: index * 0.02 }}
-                                        onClick={() => toggleSkill(skill)}
-                                        className={`skill-pill ${isSelected ? 'selected' : ''}`}
-                                        style={{
-                                            padding: '0.85rem 1.75rem',
-                                            borderRadius: '50px',
-                                            cursor: 'pointer',
-                                            fontSize: '1rem',
-                                            fontWeight: 600,
-                                            border: `1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
-                                            backgroundColor: isSelected ? '#3b82f6' : '#f8fafc',
-                                            color: isSelected ? '#fff' : '#0f172a',
-                                            boxShadow: isSelected 
-                                                ? '0 8px 16px rgba(59, 130, 246, 0.3)' 
-                                                : 'none',
-                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        }}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        {skill}
-                                    </motion.div>
-                                );
-                            })}
-                        </Box>
 
-                        <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
-                            <button
-                                type="button"
-                                onClick={handleBack}
-                                className="btn-ce btn-ce-secondary"
-                                style={{ padding: '1rem 3rem', borderRadius: '12px', fontSize: '1.05rem' }}
-                            >
-                                Back
-                            </button>
-                            <button
-                                onClick={handleContinue}
-                                className="btn-ce btn-ce-primary"
-                                style={{
-                                    padding: '1rem 4rem',
-                                    fontSize: '1.1rem',
-                                    background: '#2563eb',
-                                    borderRadius: '12px'
-                                }}
-                            >
-                                Continue to Graph
-                            </button>
+                    {loading ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 10 }}>
+                            <CircularProgress size={60} thickness={4} sx={{ color: '#2563eb' }} />
+                            <p style={{ marginTop: '20px', color: '#64748b', fontSize: '1.1rem' }}>AI is mapping relevant skills...</p>
                         </Box>
-                    </Box>
-                )}
+                    ) : (
+                        <Box sx={{ maxWidth: 700, mx: 'auto' }}>
+                            <Box className="glass-panel" sx={{ p: { xs: 3, md: 5 }, borderRadius: '24px', mb: 4 }}>
+                                <SkillPicker
+                                    label="Select or add your skills"
+                                    suggestions={skills}
+                                    selectedSkills={selectedSkills}
+                                    onChange={(newSkills) => setSelectedSkills(newSkills)}
+                                    placeholder="e.g. React, Python, Figma..."
+                                />
+                            </Box>
+
+                            <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleBack}
+                                    className="btn-ce btn-ce-secondary"
+                                    style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontSize: '1.05rem', maxWidth: '200px' }}
+                                >
+                                    Back
+                                </button>
+                                <button
+                                    onClick={handleContinue}
+                                    className="btn-ce btn-ce-primary"
+                                    style={{
+                                        flex: 2,
+                                        padding: '1rem',
+                                        fontSize: '1.05rem',
+                                        background: '#2563eb',
+                                        borderRadius: '12px'
+                                    }}
+                                >
+                                    Continue to Graph
+                                </button>
+                            </Box>
+                        </Box>
+                    )}
+                </motion.div>
             </Container>
         </Box>
     );
