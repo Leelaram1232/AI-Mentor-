@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Box, Container, CircularProgress } from '@mui/material';
 import Button from '@/components/UI/Button';
+import ProgressBar from '@/components/Layout/ProgressBar';
 import useCareerStore from '@/store/careerStore';
 import { generateSkillSuggestions } from '@/utils/groqApi';
 
