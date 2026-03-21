@@ -149,37 +149,33 @@ export default function AuthProvider({ children }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
+        queryParams: {
+          prompt: 'select_account'
+        }
       },
     });
     if (error) throw error;
     return data;
   };
 
-  // Sign out
   const signOut = async () => {
     try {
       console.log('[Auth] Signing out...');
-      // 1. Clear Supabase session
       await supabase.auth.signOut();
-      
-      // 2. Clear local state
+      return { success: true };
+    } catch (err) {
+      console.error('[Auth] Sign out error:', err);
+      return { success: false, error: err };
+    } finally {
+      // ALWAYS clear local state and ALL storage, 
+      // even if Supabase network call fails, to ensure logout.
       setUser(null);
       setProfile(null);
       setLoading(false);
-
-      // 3. Clear all storage to prevent state leakage
       if (typeof window !== 'undefined') {
         localStorage.clear();
         sessionStorage.clear();
       }
-      
-      return { success: true };
-    } catch (err) {
-      console.error('[Auth] Sign out error:', err);
-      // Even if it fails, clear state
-      setUser(null);
-      setProfile(null);
-      return { success: false, error: err };
     }
   };
 
