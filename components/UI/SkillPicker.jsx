@@ -7,38 +7,44 @@ import { useState } from 'react';
 const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
     '& .MuiOutlinedInput-root': {
         backgroundColor: 'var(--input-bg)',
-        borderRadius: 'var(--radius-md)',
-        padding: '0.5rem',
+        borderRadius: '14px',
+        padding: '0.65rem 1rem',
+        fontSize: '1.05rem',
+        transition: 'all 0.2s ease',
 
         '& fieldset': {
-            borderColor: 'var(--border)',
+            borderColor: 'var(--border-color)',
+            borderWidth: '1px',
+            transition: 'all 0.2s ease',
         },
 
         '&:hover fieldset': {
-            borderColor: 'var(--primary)',
+            borderColor: '#3b82f6',
         },
 
         '&.Mui-focused fieldset': {
-            borderColor: 'var(--primary)',
+            borderColor: '#3b82f6',
             borderWidth: '2px',
         },
     },
 }));
 
 const StyledChip = styled(Chip)({
-    backgroundColor: 'var(--primary)',
+    backgroundColor: '#3b82f6',
     color: '#ffffff',
-    fontWeight: 500,
-    transition: 'all var(--transition-fast)',
+    fontWeight: 600,
+    fontSize: '0.85rem',
+    borderRadius: '8px',
+    padding: '4px',
+    transition: 'all 0.2s ease',
 
     '&:hover': {
-        backgroundColor: 'var(--primary-hover)',
-        transform: 'scale(1.05)',
+        backgroundColor: '#1d4ed8',
+        transform: 'translateY(-1px)',
     },
 
     '& .MuiChip-deleteIcon': {
-        color: 'rgba(255, 255, 255, 0.7)',
-
+        color: 'rgba(255, 255, 255, 0.8)',
         '&:hover': {
             color: '#ffffff',
         },
@@ -89,30 +95,41 @@ export default function SkillPicker({
             />
 
             {suggestions.length > 0 && selectedSkills.length === 0 && (
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 4, textAlign: 'left' }}>
                     <p style={{
-                        fontSize: 'var(--font-size-sm)',
-                        color: 'var(--secondary)',
-                        marginBottom: 'var(--spacing-sm)'
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary)',
+                        marginBottom: '1rem',
+                        letterSpacing: '0.05em'
                     }}>
-                        Suggested skills:
+                        🔮 AI SUGGESTED SKILLS
                     </p>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {suggestions.slice(0, 10).map((skill) => (
-                            <Chip
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                        {suggestions.slice(0, 15).map((skill) => (
+                            <Box
                                 key={skill}
-                                label={skill}
                                 onClick={() => onChange([...selectedSkills, skill])}
+                                className="skill-pill"
                                 sx={{
                                     cursor: 'pointer',
-                                    borderColor: 'var(--border)',
+                                    fontSize: '0.95rem',
+                                    padding: '0.6rem 1.25rem',
+                                    fontWeight: 500,
+                                    borderRadius: '50px',
+                                    border: '1px solid var(--border-color)',
+                                    background: 'var(--input-bg)',
+                                    color: 'var(--text-primary)',
+                                    transition: 'all 0.2s ease',
                                     '&:hover': {
-                                        borderColor: 'var(--primary)',
-                                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                                    },
+                                        borderColor: '#3b82f6',
+                                        background: 'rgba(59, 130, 246, 0.1)',
+                                        transform: 'translateY(-2px)'
+                                    }
                                 }}
-                                variant="outlined"
-                            />
+                            >
+                                {skill}
+                            </Box>
                         ))}
                     </Box>
                 </Box>

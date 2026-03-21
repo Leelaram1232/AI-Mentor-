@@ -28,8 +28,9 @@ export default function SkillSelection() {
         try {
             const context = {
                 currentSelf: userData.currentRole || userData.currentSelf,
-                futureGoals: userData.selectedRole?.title || userData.futureGoals || 'Growth',
-                experience: []
+                futureGoals: userData.futureGoals || 'Growth',
+                interests: userData.interests || '',
+                experienceLevel: userData.experienceLevel || ''
             };
             const suggested = await generateSkillSuggestions(context);
             setSkills(suggested);

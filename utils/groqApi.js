@@ -545,8 +545,13 @@ Generate 5-7 relevant experience categories. Return ONLY a JSON array of strings
 }
 
 async function generateSkillSuggestions(userContext) {
-  const prompt = `Based on: Current self: ${userContext.currentSelf}, Future goals: ${userContext.futureGoals}, Experience: ${userContext.experience?.join(', ') || 'Not specified'}
-Generate 15-20 relevant skills. Return ONLY a JSON array of strings.`;
+  const prompt = `Based on: 
+  Current self/Role: ${userContext.currentSelf || 'Not specified'}
+  Future Goal: ${userContext.futureGoals || 'Not specified'}
+  Interests: ${userContext.interests || 'Not specified'}
+  Experience Level: ${userContext.experienceLevel || 'Not specified'}
+
+Generate 15-20 highly relevant technical and soft skills completely tailored to achieving this goal. Return ONLY a JSON array of strings.`;
 
   const result = await callGroq(
     'You are a career counselor. Return only valid JSON arrays.',
