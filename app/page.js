@@ -49,7 +49,7 @@ export default function Home() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem', marginTop: '1rem', width: '100%', maxWidth: 440 }}>
           <button
             className="btn-ce btn-ce-primary btn-ce-large btn-ce-glow btn-ce-full"
-            onClick={() => router.push('/onboarding/signup')}
+            onClick={() => router.push('/onboarding/role-input')}
           >
             Get Started
           </button>
