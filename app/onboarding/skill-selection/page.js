@@ -11,7 +11,7 @@ import { generateSkillSuggestions } from '@/utils/groqApi';
 
 export default function SkillSelection() {
     const router = useRouter();
-    const { userData, updateUserData, aiSuggestions, updateAISuggestions } = useCareerStore();
+    const { userData, updateUserData, aiSuggestions, updateAISuggestions, nextStep, previousStep } = useCareerStore();
     const [skills, setSkills] = useState(aiSuggestions.skillSuggestions || []);
     const [loading, setLoading] = useState(false);
     const [selectedSkills, setSelectedSkills] = useState(userData.skills || []);
@@ -124,7 +124,15 @@ export default function SkillSelection() {
                             })}
                         </Box>
 
-                        <Box sx={{ textAlign: 'center' }}>
+                        <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={handleBack}
+                                className="btn-ce btn-ce-secondary"
+                                style={{ padding: '1rem 3rem', borderRadius: '12px', fontSize: '1.05rem' }}
+                            >
+                                Back
+                            </button>
                             <button
                                 onClick={handleContinue}
                                 className="btn-ce btn-ce-primary"
@@ -135,7 +143,7 @@ export default function SkillSelection() {
                                     borderRadius: '12px'
                                 }}
                             >
-                                Continue
+                                Continue to Graph
                             </button>
                         </Box>
                     </Box>
