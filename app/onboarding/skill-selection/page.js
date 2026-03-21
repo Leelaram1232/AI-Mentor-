@@ -83,23 +83,57 @@ export default function SkillSelection() {
                             <p style={{ marginTop: '20px', color: '#64748b', fontSize: '1.1rem' }}>AI is mapping relevant skills...</p>
                         </Box>
                     ) : (
-                        <Box sx={{ maxWidth: 700, mx: 'auto' }}>
-                            <Box className="glass-panel" sx={{ p: { xs: 3, md: 5 }, borderRadius: '24px', mb: 4 }}>
-                                <SkillPicker
-                                    label="Select or add your skills"
-                                    suggestions={skills}
-                                    selectedSkills={selectedSkills}
-                                    onChange={(newSkills) => setSelectedSkills(newSkills)}
-                                    placeholder="e.g. React, Python, Figma..."
-                                />
+                        <Box sx={{ maxWidth: 800, mx: 'auto' }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexWrap: 'wrap', 
+                                gap: 2, 
+                                justifyContent: 'center', 
+                                alignItems: 'center',
+                                mt: 2
+                            }}>
+                                {skills.map((skill) => {
+                                    const isSelected = selectedSkills.includes(skill);
+                                    return (
+                                        <Box
+                                            key={skill}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setSelectedSkills(selectedSkills.filter(s => s !== skill));
+                                                } else {
+                                                    setSelectedSkills([...selectedSkills, skill]);
+                                                }
+                                            }}
+                                            sx={{
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                padding: '0.75rem 1.75rem',
+                                                fontWeight: 500,
+                                                borderRadius: '50px',
+                                                border: `1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
+                                                background: isSelected ? 'rgba(59, 130, 246, 0.05)' : '#ffffff',
+                                                color: isSelected ? '#2563eb' : 'var(--text-primary)',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    borderColor: '#3b82f6',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
+                                                }
+                                            }}
+                                        >
+                                            {skill}
+                                        </Box>
+                                    );
+                                })}
                             </Box>
 
-                            <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
+                            <Box sx={{ display: 'flex', gap: 2, mt: 6, justifyContent: 'center' }}>
                                 <button
                                     type="button"
                                     onClick={handleBack}
                                     className="btn-ce btn-ce-secondary"
-                                    style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontSize: '1.05rem', maxWidth: '200px' }}
+                                    style={{ flex: 1, padding: '1rem', borderRadius: '50px', fontSize: '1.05rem', maxWidth: '150px' }}
                                 >
                                     Back
                                 </button>
@@ -111,7 +145,8 @@ export default function SkillSelection() {
                                         padding: '1rem',
                                         fontSize: '1.05rem',
                                         background: '#2563eb',
-                                        borderRadius: '12px'
+                                        borderRadius: '50px',
+                                        maxWidth: '300px'
                                     }}
                                 >
                                     Continue to Graph
