@@ -42,7 +42,7 @@ const TABS = [
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, updateProfile } = useAuth();
   const { activeTab, setActiveTab } = useDashboardStore();
   const { userData, saveProfileToSupabase } = useCareerStore();
 
@@ -53,17 +53,31 @@ export default function DashboardPage() {
   // Sync career data from onboarding if profile is incomplete
   useEffect(() => {
     if (user && profile && !loading) {
-      const hasUnsavedData = userData.name || userData.currentRole || userData.skills.length > 0;
+      let pendingData = null;
+      try {
+        const stored = localStorage.getItem('pending_onboarding_data');
+        if (stored) pendingData = JSON.parse(stored);
+      } catch (e) {}
+
+      const hasUnsavedData = userData.name || userData.currentRole || userData.skills.length > 0 || pendingData;
       const isProfileIncomplete = !profile.career_goal || !profile.skills || !profile.experience_level;
       
       if (hasUnsavedData && isProfileIncomplete) {
         console.log('[Dashboard] Found unsaved career data, syncing to profile...');
-        saveProfileToSupabase().then(res => {
-          if (res.success) console.log('[Dashboard] Career data synced successfully');
-        });
+        
+        if (pendingData) {
+            updateProfile(pendingData).then(() => {
+                console.log('[Dashboard] Synced pending onboarding data from Google Login!');
+                localStorage.removeItem('pending_onboarding_data');
+            }).catch(e => console.error('Failed to sync pending data', e));
+        } else {
+            saveProfileToSupabase().then(res => {
+              if (res.success) console.log('[Dashboard] Career data synced from store successfully');
+            });
+        }
       }
     }
-  }, [user, profile, loading, userData, saveProfileToSupabase]);
+  }, [user, profile, loading, userData, saveProfileToSupabase, updateProfile]);
 
   if (loading) {
     return (

@@ -12,13 +12,37 @@ import ProgressBar from '@/components/Layout/ProgressBar';
 export default function OnboardingSignup() {
   const router = useRouter();
   const { userData, updateUserData } = useCareerStore();
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const [fullName, setFullName] = useState(userData.name || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const getMetadata = () => ({
+    education_level: userData.education || '',
+    interests: userData.interests || '',
+    experience_level: userData.experienceLevel || '',
+    current_job_role: userData.currentRole || '',
+    skills: [...(userData.skills || []), ...(userData.customSkills || [])].join(', '),
+    career_goal: userData.selectedRole?.title || userData.futureGoals || '',
+    location: userData.location || '',
+    linkedin_url: userData.linkedinUrl || '',
+    portfolio_url: userData.portfolioUrl || '',
+    bio: userData.bio || '',
+    preferred_language: userData.preferredLanguage || 'English',
+    course_duration_days: parseInt(userData.courseDurationDays) || 30,
+  });
+
+  const handleGoogleSignIn = async () => {
+    localStorage.setItem('pending_onboarding_data', JSON.stringify(getMetadata()));
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      setError(err?.message || 'Google sign in failed');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,29 +52,19 @@ export default function OnboardingSignup() {
     }
     setError('');
     setLoading(true);
+    
+    const metadata = getMetadata();
+    localStorage.setItem('pending_onboarding_data', JSON.stringify(metadata));
+
     try {
       updateUserData('name', fullName);
       updateUserData('email', email);
 
-      // Pass all collected career data as metadata so it's saved during account creation
-      await signUp({
+      const res = await signUp({
         email,
         password,
         fullName,
-        metadata: {
-          education_level: userData.education || '',
-          interests: userData.interests || '',
-          experience_level: userData.experienceLevel || '',
-          current_job_role: userData.currentRole || '',
-          skills: [...(userData.skills || []), ...(userData.customSkills || [])].join(', '),
-          career_goal: userData.selectedRole?.title || userData.futureGoals || '',
-          location: userData.location || '',
-          linkedin_url: userData.linkedinUrl || '',
-          portfolio_url: userData.portfolioUrl || '',
-          bio: userData.bio || '',
-          preferred_language: userData.preferredLanguage || 'English',
-          course_duration_days: parseInt(userData.courseDurationDays) || 30,
-        }
+        metadata
       });
       
       router.push('/dashboard');
@@ -59,7 +73,6 @@ export default function OnboardingSignup() {
     } finally {
       setLoading(false);
     }
-
   };
 
   return (
@@ -85,7 +98,7 @@ export default function OnboardingSignup() {
           {error ? <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert> : null}
 
           <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
-            <button className="btn-ce-social" type="button">
+            <button className="btn-ce-social" type="button" onClick={handleGoogleSignIn}>
               <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" width="20" alt="Google" />
               Google
             </button>
