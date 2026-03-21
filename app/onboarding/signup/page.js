@@ -63,7 +63,7 @@ export default function OnboardingSignup() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: '#fff', py: 8 }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', bgcolor: 'transparent', py: 8 }}>
       <Container maxWidth="sm">
         <ProgressBar
           currentStep={5}
@@ -117,7 +117,7 @@ export default function OnboardingSignup() {
             </button>
             
             <Box sx={{ textAlign: 'center', mt: 3 }}>
-                <p style={{ color: '#666' }}>Already have an account? <span style={{ color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 600 }} onClick={() => router.push('/auth/login')}>Log in</span></p>
+                <p style={{ color: 'var(--text-secondary)' }}>Already have an account? <span style={{ color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 600 }} onClick={() => router.push('/auth/login')}>Log in</span></p>
             </Box>
           </Box>
         </Box>
