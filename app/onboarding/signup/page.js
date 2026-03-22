@@ -8,6 +8,7 @@ import Button from '@/components/UI/Button';
 import useCareerStore from '@/store/careerStore';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import ProgressBar from '@/components/Layout/ProgressBar';
+import { careerUserDataToProfileUpdates } from '@/utils/mapCareerDataToProfile';
 
 export default function OnboardingSignup() {
   const router = useRouter();
@@ -20,20 +21,8 @@ export default function OnboardingSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const getMetadata = () => ({
-    education_level: userData.education || '',
-    interests: userData.interests || '',
-    experience_level: userData.experienceLevel || '',
-    current_job_role: userData.currentRole || '',
-    skills: [...(userData.skills || []), ...(userData.customSkills || [])].join(', '),
-    career_goal: userData.selectedRole?.title || userData.futureGoals || '',
-    location: userData.location || '',
-    linkedin_url: userData.linkedinUrl || '',
-    portfolio_url: userData.portfolioUrl || '',
-    bio: userData.bio || '',
-    preferred_language: userData.preferredLanguage || 'English',
-    course_duration_days: parseInt(userData.courseDurationDays) || 30,
-  });
+  /** Same shape as Supabase `profiles` columns used by onboarding */
+  const getMetadata = () => careerUserDataToProfileUpdates(userData);
 
   const handleGoogleSignIn = async () => {
     localStorage.setItem('pending_onboarding_data', JSON.stringify(getMetadata()));
@@ -52,13 +41,19 @@ export default function OnboardingSignup() {
     }
     setError('');
     setLoading(true);
-    
-    const metadata = getMetadata();
-    localStorage.setItem('pending_onboarding_data', JSON.stringify(metadata));
 
     try {
-      updateUserData('name', fullName);
-      updateUserData('email', email);
+      const nameTrim = fullName.trim();
+      const emailTrim = email.trim();
+      updateUserData('name', nameTrim);
+      updateUserData('email', emailTrim);
+
+      const metadata = careerUserDataToProfileUpdates({
+        ...userData,
+        name: nameTrim,
+        email: emailTrim,
+      });
+      localStorage.setItem('pending_onboarding_data', JSON.stringify(metadata));
 
       const res = await signUp({
         email,
@@ -66,8 +61,17 @@ export default function OnboardingSignup() {
         fullName,
         metadata
       });
-      
-      router.push('/dashboard');
+
+      // Session is required for dashboard; AuthProvider also sets user from session to avoid redirect race
+      if (res?.session) {
+        // Reconcile full onboarding fields (bio/currentSelf, paths, etc.) and refresh UI profile
+        await saveProfileToSupabase();
+        await refreshProfile();
+        localStorage.removeItem('pending_onboarding_data');
+        router.push('/dashboard');
+      } else {
+        router.push('/auth/login?returnUrl=/dashboard&registered=1');
+      }
     } catch (err) {
       setError(err?.message || 'Sign up failed.');
     } finally {

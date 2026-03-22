@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getCurrentUser, updateProfile } from '@/utils/authClient';
+import { careerUserDataToProfileUpdates } from '@/utils/mapCareerDataToProfile';
 
 const useCareerStore = create(
     persist(
@@ -77,10 +78,14 @@ const useCareerStore = create(
                     currentStep: 0,
                     userData: {
                         name: '',
+                        email: '',
                         education: '',
                         interests: '',
                         experienceLevel: '',
                         currentSelf: '',
+                        currentRole: '',
+                        suggestedRoles: [],
+                        selectedRole: null,
                         futureGoals: '',
                         experience: [],
                         skills: [],
@@ -125,23 +130,11 @@ const useCareerStore = create(
                     const user = await getCurrentUser();
                     if (!user) throw new Error('No user found');
 
-                    // Explicitly map all fields and log for debugging
-                    const updates = {
-                        full_name: userData.name || '',
-                        education_level: userData.education || '',
-                        interests: userData.interests || '',
-                        experience_level: userData.experienceLevel || '',
-                        career_goal: userData.selectedRole?.title || userData.futureGoals || userData.currentRole || '',
-                        current_job_role: userData.currentRole || '',
-                        skills: [...(userData.skills || []), ...(userData.customSkills || [])].join(', '),
-                        location: userData.location || '',
-                        linkedin_url: userData.linkedinUrl || '',
-                        portfolio_url: userData.portfolioUrl || '',
-                        bio: userData.bio || userData.currentSelf || '',
-                        preferred_language: userData.preferredLanguage || 'English',
-                        course_duration_days: parseInt(userData.courseDurationDays) || 30,
-                    };
-
+                    const mapped = careerUserDataToProfileUpdates(userData);
+                    const updates = { ...mapped };
+                    if ((userData.name || '').trim()) {
+                        updates.full_name = userData.name.trim();
+                    }
 
                     console.log('[CareerStore] Saving profile updates to Supabase:', updates);
                     await updateProfile(user.id, updates);

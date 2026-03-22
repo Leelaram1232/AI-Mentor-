@@ -11,6 +11,7 @@ export default function ProfileTab() {
   const [form, setForm] = useState({
     full_name: '', bio: '', education_level: '', experience_level: '',
     skills: '', interests: '', career_goal: '', current_job_role: '',
+    selected_career_path: '',
     location: '', linkedin_url: '', portfolio_url: '',
     preferred_language: 'English', course_duration_days: '30',
   });
@@ -27,6 +28,7 @@ export default function ProfileTab() {
       education_level: profile.education_level || '', experience_level: profile.experience_level || '',
       skills: profile.skills || '', interests: profile.interests || '',
       career_goal: profile.career_goal || '', current_job_role: profile.current_job_role || '',
+      selected_career_path: profile.selected_career_path || '',
       location: profile.location || '', linkedin_url: profile.linkedin_url || '',
       portfolio_url: profile.portfolio_url || '',
       preferred_language: profile.preferred_language || 'English',
@@ -111,6 +113,9 @@ export default function ProfileTab() {
               <span className="dashboard-tag" style={{ fontSize: '0.75rem' }}>Level {profile?.level || 1}</span>
               <span className="dashboard-tag tag-secondary" style={{ fontSize: '0.75rem' }}>{profile?.xp_points || 0} XP</span>
               {profile?.career_goal && <span className="dashboard-tag tag-secondary" style={{ fontSize: '0.75rem' }}>{profile.career_goal}</span>}
+              {profile?.selected_career_path && profile.selected_career_path !== profile.career_goal && (
+                <span className="dashboard-tag tag-secondary" style={{ fontSize: '0.75rem' }} title="Focus from career map">{profile.selected_career_path}</span>
+              )}
             </div>
           </div>
         </div>
@@ -193,8 +198,9 @@ export default function ProfileTab() {
           {[
             { l: 'Full Name', k: 'full_name' },
             { l: 'Career Goal', k: 'career_goal', p: 'e.g. Full-Stack Developer' },
+            { l: 'Career map focus', k: 'selected_career_path', p: 'Role highlighted in your career graph' },
             { l: 'Current Role', k: 'current_job_role', p: 'e.g. Student, Junior Dev' },
-            { l: 'Education Level', k: 'education_level' },
+            { l: 'Education', k: 'education_level', p: 'e.g. B.Tech, Bootcamp, Self-taught' },
             { l: 'Skills', k: 'skills', p: 'Comma-separated' },
             { l: 'Interests', k: 'interests', p: 'Comma-separated' },
             { l: 'Location', k: 'location', p: 'e.g. Bangalore, India' },
@@ -218,8 +224,8 @@ export default function ProfileTab() {
           </div>
           <div className="input-group-ce">
             <textarea className="custom-input-ce" placeholder=" " value={form.bio}
-              onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={3} style={{ resize: 'vertical' }} />
-            <label className={`floating-label-ce ${form.bio ? 'active' : ''}`}>Bio</label>
+              onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} rows={4} style={{ resize: 'vertical' }} />
+            <label className={`floating-label-ce ${form.bio ? 'active' : ''}`}>About you (from onboarding)</label>
           </div>
 
           {/* Learning Preferences */}

@@ -113,6 +113,13 @@ export default function AuthProvider({ children }) {
       throw error;
     }
 
+    // Set user immediately when session exists so /dashboard does not redirect to login
+    // before onAuthStateChange fires (race after sign-up + router.push).
+    if (data.session?.user) {
+      setUser(data.session.user);
+      setLoading(false);
+    }
+
     // If user was created, try to update profile
     if (data.user) {
       try {

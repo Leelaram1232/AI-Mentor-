@@ -13,8 +13,8 @@ import { useAuth } from '@/components/Auth/AuthProvider';
 
 export default function BubbleGraph() {
     const router = useRouter();
-    const { user } = useAuth();
-    const { userData, saveProfileToSupabase } = useCareerStore();
+    const { user, refreshProfile } = useAuth();
+    const { userData, saveProfileToSupabase, updateUserData } = useCareerStore();
     const [centerNode, setCenterNode] = useState(userData.selectedRole?.title || userData.currentRole || 'Professional');
     const [surroundingNodes, setSurroundingNodes] = useState([]);
     const [isLoadingAI, setIsLoadingAI] = useState(true);
@@ -44,7 +44,9 @@ export default function BubbleGraph() {
         if (user) {
             setIsSaving(true);
             try {
-                await saveProfileToSupabase();
+                updateUserData('selectedRole', { id: null, title: centerNode });
+                const res = await saveProfileToSupabase();
+                if (res?.success) await refreshProfile();
                 router.push('/dashboard');
             } catch (err) {
                 console.error(err);

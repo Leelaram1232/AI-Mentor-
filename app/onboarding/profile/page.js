@@ -17,6 +17,10 @@ export default function ProfileStep() {
     const [interests, setInterests] = useState(userData.interests || '');
     const [preferredLanguage, setPreferredLanguage] = useState(userData.preferredLanguage || 'English');
     const [courseDurationDays, setCourseDurationDays] = useState(userData.courseDurationDays || 30);
+    const [education, setEducation] = useState(userData.education || '');
+    const [location, setLocation] = useState(userData.location || '');
+    const [linkedinUrl, setLinkedinUrl] = useState(userData.linkedinUrl || '');
+    const [portfolioUrl, setPortfolioUrl] = useState(userData.portfolioUrl || '');
     const [errors, setErrors] = useState({});
 
     const validate = () => {
@@ -36,6 +40,10 @@ export default function ProfileStep() {
         updateUserData('interests', interests.trim());
         updateUserData('preferredLanguage', preferredLanguage);
         updateUserData('courseDurationDays', courseDurationDays);
+        updateUserData('education', education.trim());
+        updateUserData('location', location.trim());
+        updateUserData('linkedinUrl', linkedinUrl.trim());
+        updateUserData('portfolioUrl', portfolioUrl.trim());
         
         nextStep();
         router.push('/onboarding/skill-selection');
@@ -134,6 +142,47 @@ export default function ProfileStep() {
                                 onChange={e => setInterests(e.target.value)}
                             />
                         </div>
+
+                        <div className="input-group-ce">
+                            <input
+                                type="text"
+                                className="custom-input-ce"
+                                placeholder="Education level (e.g. B.Tech CS, Self-taught, PhD)"
+                                value={education}
+                                onChange={e => setEducation(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="input-group-ce">
+                            <input
+                                type="text"
+                                className="custom-input-ce"
+                                placeholder="Location (city, country)"
+                                value={location}
+                                onChange={e => setLocation(e.target.value)}
+                            />
+                        </div>
+
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                            <div className="input-group-ce">
+                                <input
+                                    type="url"
+                                    className="custom-input-ce"
+                                    placeholder="LinkedIn profile URL (optional)"
+                                    value={linkedinUrl}
+                                    onChange={e => setLinkedinUrl(e.target.value)}
+                                />
+                            </div>
+                            <div className="input-group-ce">
+                                <input
+                                    type="url"
+                                    className="custom-input-ce"
+                                    placeholder="Portfolio / website URL (optional)"
+                                    value={portfolioUrl}
+                                    onChange={e => setPortfolioUrl(e.target.value)}
+                                />
+                            </div>
+                        </Box>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 1 }}>
                             <Box sx={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />

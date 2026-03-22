@@ -9,9 +9,11 @@ import ProgressBar from '@/components/Layout/ProgressBar';
 import CircularCareerMap from '@/components/CareerVisualization/CircularCareerMap';
 import { Box, CircularProgress, Card, CardContent } from '@mui/material';
 import { generateCareerPaths } from '@/utils/groqApi';
+import { useAuth } from '@/components/Auth/AuthProvider';
 
 export default function Results() {
     const router = useRouter();
+    const { user } = useAuth();
     const {
         userData,
         aiSuggestions,
@@ -240,11 +242,21 @@ export default function Results() {
                         </Box>
                     )}
 
-                    <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 2, mt: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
                         <Button variant="outlined" onClick={handleStartOver}>
                             Start Over
                         </Button>
-                        <Button onClick={() => router.push('/')}>Go to Home</Button>
+                        <Button
+                            onClick={() => {
+                                if (user) router.push('/dashboard');
+                                else router.push('/auth/login?returnUrl=/dashboard');
+                            }}
+                        >
+                            {user ? 'Go to Dashboard' : 'Log in to open Dashboard'}
+                        </Button>
+                        <Button variant="outlined" onClick={() => router.push('/')}>
+                            Home
+                        </Button>
                     </Box>
                 </motion.div>
             </div>

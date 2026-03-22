@@ -42,7 +42,7 @@ const TABS = [
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, profile, loading, updateProfile } = useAuth();
+  const { user, profile, loading, updateProfile, refreshProfile } = useAuth();
   const { activeTab, setActiveTab } = useDashboardStore();
   const { userData, saveProfileToSupabase } = useCareerStore();
 
@@ -50,34 +50,49 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/auth/login');
   }, [loading, user, router]);
 
-  // Sync career data from onboarding if profile is incomplete
+  // Sync onboarding: pending localStorage (e.g. Google OAuth) always merges; otherwise backfill from Zustand if DB is thin
   useEffect(() => {
-    if (user && profile && !loading) {
-      let pendingData = null;
-      try {
-        const stored = localStorage.getItem('pending_onboarding_data');
-        if (stored) pendingData = JSON.parse(stored);
-      } catch (e) {}
+    if (!user || !profile || loading) return;
 
-      const hasUnsavedData = userData.name || userData.currentRole || userData.skills.length > 0 || pendingData;
-      const isProfileIncomplete = !profile.career_goal || !profile.skills || !profile.experience_level;
-      
-      if (hasUnsavedData && isProfileIncomplete) {
-        console.log('[Dashboard] Found unsaved career data, syncing to profile...');
-        
-        if (pendingData) {
-            updateProfile(pendingData).then(() => {
-                console.log('[Dashboard] Synced pending onboarding data from Google Login!');
-                localStorage.removeItem('pending_onboarding_data');
-            }).catch(e => console.error('Failed to sync pending data', e));
-        } else {
-            saveProfileToSupabase().then(res => {
-              if (res.success) console.log('[Dashboard] Career data synced from store successfully');
-            });
-        }
-      }
+    let pendingData = null;
+    try {
+      const stored = localStorage.getItem('pending_onboarding_data');
+      if (stored) pendingData = JSON.parse(stored);
+    } catch (e) {}
+
+    if (pendingData && typeof pendingData === 'object') {
+      updateProfile(pendingData)
+        .then(() => {
+          localStorage.removeItem('pending_onboarding_data');
+          return refreshProfile();
+        })
+        .then(() => console.log('[Dashboard] Synced pending onboarding data'))
+        .catch((e) => console.error('[Dashboard] Pending onboarding sync failed', e));
+      return;
     }
-  }, [user, profile, loading, userData, saveProfileToSupabase, updateProfile]);
+
+    const storeHasData =
+      (userData.skills?.length || 0) > 0 ||
+      (userData.customSkills?.length || 0) > 0 ||
+      !!(userData.currentSelf || '').trim() ||
+      !!(userData.futureGoals || '').trim() ||
+      !!(userData.currentRole || '').trim();
+
+    const profileThin =
+      !(profile.bio || '').trim() ||
+      !(profile.skills || '').trim() ||
+      !(profile.career_goal || '').trim() ||
+      !(profile.experience_level || '').trim();
+
+    if (storeHasData && profileThin) {
+      saveProfileToSupabase()
+        .then((res) => {
+          if (res?.success) return refreshProfile();
+        })
+        .then(() => console.log('[Dashboard] Career store synced to profile'))
+        .catch((e) => console.error('[Dashboard] Store sync failed', e));
+    }
+  }, [user, profile, loading, userData, saveProfileToSupabase, updateProfile, refreshProfile]);
 
   if (loading) {
     return (
