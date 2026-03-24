@@ -57,10 +57,18 @@ export async function getProfile(userId) {
 }
 
 export async function updateProfile(userId, updates) {
+  const { id: _ignore, ...rest } = updates || {};
+  const payload = {
+    id: userId,
+    ...rest,
+    updated_at: new Date().toISOString(),
+  };
+  const cleaned = Object.fromEntries(
+    Object.entries(payload).filter(([, v]) => v !== undefined)
+  );
   const { data, error } = await supabase
     .from('profiles')
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', userId)
+    .upsert(cleaned, { onConflict: 'id' })
     .select()
     .single();
   if (error) throw error;

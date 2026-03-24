@@ -35,7 +35,7 @@ export default function Header() {
                     <HeaderLink href="/dashboard">Dashboard</HeaderLink>
                     <HeaderLink href="/profile">Profile</HeaderLink>
                     <HeaderLink href="/auth/login">Login</HeaderLink>
-                    <HeaderLink href="/auth/signup">Sign Up</HeaderLink>
+                    <HeaderLink href="/onboarding">Sign Up</HeaderLink>
                 </Box>
             </Toolbar>
         </StyledAppBar>

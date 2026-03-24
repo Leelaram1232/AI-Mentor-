@@ -15,7 +15,7 @@ export default function BubbleGraph() {
     const router = useRouter();
     const { user, refreshProfile } = useAuth();
     const { userData, saveProfileToSupabase, updateUserData } = useCareerStore();
-    const [centerNode, setCenterNode] = useState(userData.selectedRole?.title || userData.currentRole || 'Professional');
+    const [centerNode, setCenterNode] = useState(userData.selectedRole?.title || userData.futureGoals || 'Professional');
     const [surroundingNodes, setSurroundingNodes] = useState([]);
     const [isLoadingAI, setIsLoadingAI] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -41,16 +41,20 @@ export default function BubbleGraph() {
     }, [centerNode]);
 
     const handleFinish = async () => {
+        // Always persist graph center as career focus so signup/metadata includes it
+        updateUserData('selectedRole', { id: null, title: centerNode });
+
         if (user) {
             setIsSaving(true);
             try {
-                updateUserData('selectedRole', { id: null, title: centerNode });
                 const res = await saveProfileToSupabase();
                 if (res?.success) await refreshProfile();
                 router.push('/dashboard');
             } catch (err) {
                 console.error(err);
                 router.push('/dashboard');
+            } finally {
+                setIsSaving(false);
             }
         } else {
             router.push('/onboarding/signup');

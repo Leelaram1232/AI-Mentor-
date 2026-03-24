@@ -134,7 +134,7 @@ export default function LoginPage() {
           </div>
           <div style={{ marginTop: '1.25rem' }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Don't have an account? </span>
-            <button onClick={() => router.push('/auth/signup')} style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', fontFamily: 'inherit' }}>
+            <button onClick={() => router.push('/onboarding')} style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', fontFamily: 'inherit' }}>
               Sign up
             </button>
           </div>

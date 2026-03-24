@@ -189,49 +189,174 @@ export default function CareerTab() {
                 {ld.interview ? 'Generating...' : 'Start Interview'}
               </button>
             </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '1rem' }}>
-              <div style={{ padding: '1.25rem', background: 'var(--input-bg)', borderRadius: 14, border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                  <span className="meta-badge beginner">{interview.category}</span>
-                  <span className={`meta-badge ${interview.difficulty === 'easy' ? 'beginner' : interview.difficulty === 'medium' ? 'intermediate' : 'advanced'}`}>{interview.difficulty}</span>
+           ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: feedback ? 'repeat(auto-fit, minmax(360px, 1fr))' : '1fr', gap: '1.5rem', alignItems: 'start' }}>
+              
+              {/* Left Column: Question & Answer */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ padding: '1.25rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: 14, border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span className="meta-badge beginner">{interview.category}</span>
+                    <span className={`meta-badge ${interview.difficulty === 'easy' ? 'beginner' : interview.difficulty === 'medium' ? 'intermediate' : 'advanced'}`}>{interview.difficulty}</span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.5 }}>{interview.question}</div>
+                  {interview.hints?.length > 0 && <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.5rem' }}>💡 {interview.hints.join(' • ')}</div>}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.5 }}>{interview.question}</div>
-                {interview.hints?.length > 0 && <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.5rem' }}>💡 {interview.hints.join(' • ')}</div>}
+
+                {!feedback ? (
+                  <div>
+                    <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Type your answer here..." rows={6}
+                      style={{ width: '100%', padding: '1rem', borderRadius: 12, border: '2px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.95rem', fontFamily: 'Outfit, sans-serif', resize: 'vertical', outline: 'none', marginBottom: '1rem', transition: 'border-color 0.2s' }} 
+                      onFocus={e => e.target.style.borderColor = 'var(--primary-blue)'}
+                      onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+                    />
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <button className="btn-ce btn-ce-primary" disabled={!answer.trim() || ld.feedback} onClick={async () => {
+                        setL('feedback', true); 
+                        try { 
+                          const res = await evaluateInterviewAnswer(interview.question, answer, profile);
+                          setFeedback(res); 
+                          await addXP(user.id, 10); 
+                          await refreshProfile(); 
+                          
+                          // Trigger TTS explanation
+                          if (res?.spoken_explanation && window.speechSynthesis) {
+                             window.speechSynthesis.cancel();
+                             const utterance = new SpeechSynthesisUtterance(res.spoken_explanation);
+                             utterance.rate = 1.0;
+                             window.speechSynthesis.speak(utterance);
+                          }
+                        } catch (e) {
+                          console.error(e);
+                        } 
+                        setL('feedback', false);
+                      }}>{ld.feedback ? 'AI Evaluating...' : 'Submit Answer'}</button>
+                      <button className="btn-ce btn-ce-secondary" disabled={ld.interview} onClick={async () => {
+                        setL('interview', true); setFeedback(null); setAnswer('');
+                        try { const q = await generateInterviewQuestion(profile, prevQs); setInterview(q); setPrevQs(p => [...p, q.question]); } catch (e) {}
+                        setL('interview', false);
+                      }}>Skip</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ padding: '1.25rem', background: 'var(--input-bg)', borderRadius: 14, border: '1px solid var(--border-color)', opacity: 0.8 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 6 }}>YOUR ANSWER:</div>
+                    <div style={{ fontSize: '0.95rem', lineHeight: 1.5, color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                      "{answer}"
+                    </div>
+                  </div>
+                )}
               </div>
-              {!feedback ? (
-                <div>
-                  <textarea value={answer} onChange={e => setAnswer(e.target.value)} placeholder="Type your answer here..." rows={5}
-                    style={{ width: '100%', padding: '1rem', borderRadius: 12, border: '2px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: '0.9rem', fontFamily: 'Outfit, sans-serif', resize: 'vertical', outline: 'none', marginBottom: '0.5rem' }} />
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn-ce btn-ce-primary" disabled={!answer.trim() || ld.feedback} onClick={async () => {
-                      setL('feedback', true); try { setFeedback(await evaluateInterviewAnswer(interview.question, answer, profile)); await addXP(user.id, 10); await refreshProfile(); } catch (e) {} setL('feedback', false);
-                    }}>{ld.feedback ? 'Evaluating...' : 'Submit Answer'}</button>
-                    <button className="btn-ce btn-ce-secondary" disabled={ld.interview} onClick={async () => {
+
+              {/* Right Column: AI Fixer Animated Feedback */}
+              {feedback && (
+                <div className="ai-fixer-pop fade-in-up" style={{
+                  padding: '1.5rem', borderRadius: 20,
+                  background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.1))',
+                  border: '1px solid rgba(59, 130, 246, 0.3)', position: 'relative',
+                  animation: 'popSide 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                  boxShadow: '0 8px 32px rgba(37, 99, 235, 0.1)',
+                  opacity: 0,
+                  transform: 'translateX(20px)'
+                }}>
+                  <div style={{ 
+                    position: 'absolute', top: -18, right: 24,
+                    background: 'linear-gradient(135deg, var(--primary-blue), var(--blob-2))', color: '#fff', padding: '6px 16px',
+                    borderRadius: 20, fontSize: '0.85rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6,
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
+                  }}>
+                    <span style={{ fontSize: '1.2rem', animation: 'wave 2s infinite' }}>👨‍🏫</span> AI Mentor Review
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1.25rem', paddingTop: '0.5rem' }}>
+                    
+                    {/* Score Card */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: 16 }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: '50%',
+                        background: feedback.score >= 7 ? 'linear-gradient(135deg, #10b981, #059669)' : feedback.score >= 4 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '1.4rem',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}>{feedback.score}</div>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.5px' }}>
+                          {feedback.score >= 7 ? 'Passed! 🎉' : 'Needs Practice'} 
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 2 }}>{feedback.score}/10 points • +10 XP</div>
+                      </div>
+                    </div>
+                    
+                    {/* Talking indicator */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--primary-blue)', fontSize: '0.8rem', fontWeight: 700 }}>
+                       <span style={{ display: 'inline-flex', gap: 3 }}>
+                         <span style={{ width: 3, height: 10, background: 'var(--primary-blue)', borderRadius: 2, animation: 'equalize 1s infinite ease-in-out' }}></span>
+                         <span style={{ width: 3, height: 14, background: 'var(--primary-blue)', borderRadius: 2, animation: 'equalize 1.1s infinite ease-in-out 0.2s' }}></span>
+                         <span style={{ width: 3, height: 8, background: 'var(--primary-blue)', borderRadius: 2, animation: 'equalize 0.9s infinite ease-in-out 0.4s' }}></span>
+                       </span>
+                       Listen to your mentor's feedback...
+                    </div>
+
+                    <p style={{ fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--text-primary)', margin: 0 }}>
+                      {feedback.feedback}
+                    </p>
+                    
+                    {/* Fixers Section */}
+                    <div style={{ background: 'rgba(239, 68, 68, 0.05)', borderRadius: 12, padding: '1rem', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '1.1rem' }}>🔧</span> 
+                        {feedback.score >= 7 ? 'Missing Fixers (to make it perfect):' : 'Fixes for Wrong Answers:'}
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                        {feedback.improvements?.map((imp, i) => (
+                          <li key={i} style={{ marginBottom: 6 }}>{imp}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Ideal Answer Section */}
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '1.1rem' }}>💡</span> 
+                        What I was looking for (Ideal Answer):
+                      </div>
+                      <div style={{ 
+                        padding: '1rem', background: 'rgba(16, 185, 129, 0.08)', 
+                        borderLeft: '4px solid var(--success-green)', borderRadius: '0 12px 12px 0',
+                        fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--text-primary)', lineHeight: 1.6
+                      }}>
+                        "{feedback.sample_answer}"
+                      </div>
+                    </div>
+
+                    <button className="btn-ce btn-ce-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '1rem' }} onClick={async () => {
+                      if (window.speechSynthesis) window.speechSynthesis.cancel();
                       setL('interview', true); setFeedback(null); setAnswer('');
                       try { const q = await generateInterviewQuestion(profile, prevQs); setInterview(q); setPrevQs(p => [...p, q.question]); } catch (e) {}
                       setL('interview', false);
-                    }}>Skip</button>
+                    }}>Ready for Next Question? →</button>
                   </div>
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{
-                      width: 48, height: 48, borderRadius: '50%',
-                      background: feedback.score >= 7 ? 'linear-gradient(135deg, #10b981, #059669)' : feedback.score >= 4 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '1.1rem',
-                    }}>{feedback.score}</div>
-                    <div><div style={{ fontWeight: 800 }}>Score: {feedback.score}/10</div><div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>+10 XP earned</div></div>
-                  </div>
-                  <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{feedback.feedback}</p>
-                  <button className="btn-ce btn-ce-primary" onClick={async () => {
-                    setL('interview', true); setFeedback(null); setAnswer('');
-                    try { const q = await generateInterviewQuestion(profile, prevQs); setInterview(q); setPrevQs(p => [...p, q.question]); } catch (e) {}
-                    setL('interview', false);
-                  }}>Next Question →</button>
                 </div>
               )}
+
+              <style jsx>{`
+                @keyframes popSide {
+                  0% { opacity: 0; transform: translateX(30px) scale(0.95); }
+                  100% { opacity: 1; transform: translateX(0) scale(1); }
+                }
+                @keyframes equalize {
+                  0% { height: 6px; }
+                  50% { height: 16px; }
+                  100% { height: 6px; }
+                }
+                @keyframes wave {
+                  0% { transform: rotate(0deg); }
+                  20% { transform: rotate(15deg); }
+                  40% { transform: rotate(-10deg); }
+                  60% { transform: rotate(15deg); }
+                  80% { transform: rotate(-10deg); }
+                  100% { transform: rotate(0deg); }
+                }
+              `}</style>
             </div>
           )}
         </div>

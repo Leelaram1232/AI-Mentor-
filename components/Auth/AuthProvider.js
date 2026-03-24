@@ -32,7 +32,21 @@ export default function AuthProvider({ children }) {
         .select('*')
         .eq('id', userId)
         .single();
-      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile not found, so we auto-create a basic one to prevent dashboard errors
+          console.log('[Auth] Profile not found, auto-creating...');
+          const { data: newProfile, error: insertError } = await supabase
+            .from('profiles')
+            .upsert({ id: userId, updated_at: new Date().toISOString() })
+            .select()
+            .single();
+            
+          if (!insertError) return newProfile;
+        }
+        throw error;
+      }
       return data;
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -129,11 +143,14 @@ export default function AuthProvider({ children }) {
           full_name: fullName || '',
           ...metadata,
         };
-        await supabase.from('profiles').upsert(profileData);
+        const { error: upsertErr } = await supabase.from('profiles').upsert(profileData);
+        if (upsertErr) {
+          console.error('[Auth] profiles upsert failed:', upsertErr.message, upsertErr);
+        }
         const prof = await fetchProfile(data.user.id);
         setProfile(prof);
       } catch (profileErr) {
-        console.warn('Profile creation skipped (table may not exist yet):', profileErr.message);
+        console.error('[Auth] Profile upsert exception:', profileErr);
       }
     }
 

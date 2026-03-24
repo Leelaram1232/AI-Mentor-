@@ -12,8 +12,8 @@ import { careerUserDataToProfileUpdates } from '@/utils/mapCareerDataToProfile';
 
 export default function OnboardingSignup() {
   const router = useRouter();
-  const { userData, updateUserData } = useCareerStore();
-  const { signUp, signInWithGoogle } = useAuth();
+  const { userData, updateUserData, saveProfileToSupabase } = useCareerStore();
+  const { signUp, signInWithGoogle, refreshProfile } = useAuth();
   const [fullName, setFullName] = useState(userData.name || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -56,16 +56,18 @@ export default function OnboardingSignup() {
       localStorage.setItem('pending_onboarding_data', JSON.stringify(metadata));
 
       const res = await signUp({
-        email,
+        email: emailTrim,
         password,
-        fullName,
-        metadata
+        fullName: nameTrim,
+        metadata,
       });
 
       // Session is required for dashboard; AuthProvider also sets user from session to avoid redirect race
       if (res?.session) {
-        // Reconcile full onboarding fields (bio/currentSelf, paths, etc.) and refresh UI profile
-        await saveProfileToSupabase();
+        const saveRes = await saveProfileToSupabase();
+        if (!saveRes?.success) {
+          console.warn('[OnboardingSignup] saveProfileToSupabase after sign-up:', saveRes?.error);
+        }
         await refreshProfile();
         localStorage.removeItem('pending_onboarding_data');
         router.push('/dashboard');

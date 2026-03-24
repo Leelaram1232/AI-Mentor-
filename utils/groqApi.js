@@ -91,7 +91,7 @@ MENTORSHIP RULES:
 3. STRICT BREVITY FOR SMALL TALK: For "Hi", "Hello", "How are you?", or wishes, respond with ONLY ONE SHORT SENTENCE. No long intros.
 4. TOPIC DEPTH: Only provide detailed explanations if the user asks a specific career or educational question. When they do, be DEEP and THOROUGH.
 5. PERSONAL & WARM: Be friendly but extremely concise during casual chat.
-6. STRUCTURE: Use Markdown for the text response. Use tables (| Feature | Description |) for complex topics.`;
+6. CONVERSATIONAL TONE: You are speaking aloud! Do NOT use tables or bullet lists that sound robotic when read. Explain concepts fluidly like a real human teacher. Write in warm, structured, conversational paragraphs.`;
 
   try {
     const completion = await groq.chat.completions.create({
@@ -119,7 +119,8 @@ export async function generateLearningRoadmap(userProfile) {
 
   const prompt = `Create a highly structured, sequential DAY-BY-DAY learning roadmap for:
 - Career Goal: ${userProfile?.career_goal || userProfile?.selected_career_path || 'Software Developer'}
-- Current Skills: ${userProfile?.skills || 'None specified'}
+- Current/Selected Skills: ${userProfile?.skills || 'None specified'}
+- Interested Subjects to Learn: ${userProfile?.interests || 'None specified'}
 - Experience Level: ${userProfile?.experience_level || 'fresher'}
 - Preferred Duration: ${days} days
 - Preferred Language: ${language}
@@ -330,7 +331,8 @@ Provide JSON feedback:
   "strengths": ["strength1"],
   "improvements": ["improvement1"],
   "feedback": "Overall feedback paragraph",
-  "sample_answer": "A brief ideal answer"
+  "sample_answer": "A brief ideal answer",
+  "spoken_explanation": "A conversational script explaining the feedback and fixers like a friendly human teacher speaking aloud. DO NOT use lists or read bullet points."
 }
 
 Return ONLY valid JSON.`;
@@ -354,6 +356,7 @@ Return ONLY valid JSON.`;
     improvements: ['Try to be more specific with examples'],
     feedback: 'Good start! Try to include more specific details and quantifiable results.',
     sample_answer: 'A strong answer would include specific examples, measurable outcomes, and lessons learned.',
+    spoken_explanation: "You made a good start, but there were some key areas missing. Try to be more specific with your examples next time, and maybe include some measurable outcomes to show real impact. I've placed an ideal sample answer below for you to review."
   };
 }
 

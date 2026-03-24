@@ -417,7 +417,8 @@ export default function LearnTab() {
                            </div>
                          ) : videos ? (
                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                             {videos.slice(0, 2).map((vid, vIdx) => (
+                             {videos.filter(vid => !vid.isFallback).length > 0 ? (
+                                videos.filter(vid => !vid.isFallback).slice(0, 2).map((vid, vIdx) => (
                                <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
                                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
                                    {vid.embedUrl ? (
@@ -425,7 +426,8 @@ export default function LearnTab() {
                                        src={vid.embedUrl} 
                                        title={vid.title}
                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                       referrerPolicy="strict-origin-when-cross-origin"
                                        allowFullScreen
                                      />
                                    ) : (
@@ -443,6 +445,14 @@ export default function LearnTab() {
                                  </div>
                                </div>
                              ))}
+                              ) : (
+                                <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
+                                  <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
+                                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Videos loading...</div>
+                                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>Click below to watch tutorials on YouTube directly</p>
+                                  <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title)} target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-secondary" style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube</a>
+                                </div>
+                              )}
                            </div>
                          ) : (
                            <button onClick={() => loadVideoForStep(item)} className="glass-panel" style={{ width: '100%', padding: '3rem 2rem', borderRadius: 16, cursor: 'pointer', borderStyle: 'dashed', background: 'var(--primary-blue-light)', color: 'var(--primary-blue)', textAlign: 'center', transition: 'all 0.2s' }}>
