@@ -380,7 +380,14 @@ export default function LearnTab() {
                           <h3 style={{ fontWeight: 800, fontSize: '1.6rem', margin: '0 0 0.75rem 0', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{item.title}</h3>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: 700 }}>{item.description}</p>
                        </div>
-                       <div style={{ display: 'flex', gap: '0.75rem' }}>
+                       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                         <button 
+                           className="btn-ce btn-ce-secondary" 
+                           onClick={() => setActiveTab('exams')}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}
+                         >
+                           📝 Take Exam
+                         </button>
                          <button 
                            className="btn-ce btn-ce-secondary" 
                            onClick={() => learnWithMentor(item)}
@@ -448,7 +455,7 @@ export default function LearnTab() {
                               ) : (
                                 <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
                                   <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
-                                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Videos loading...</div>
+                                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Video Embeds Unavailable</div>
                                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>Click below to watch tutorials on YouTube directly</p>
                                   <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title)} target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-secondary" style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube</a>
                                 </div>
@@ -462,6 +469,30 @@ export default function LearnTab() {
                            </button>
                          )}
                        </div>
+
+                       {/* Project Resources (Only for Projects Category) */}
+                       {item.category === 'Projects' && (
+                         <div style={{ gridColumn: '1 / -1', marginTop: '1rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+                           <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🚀 Project Assets & Inspiration</h4>
+                           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                             <img 
+                               src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} 
+                               alt="Project cover" 
+                               style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} 
+                             />
+                             <div style={{ flex: 1, minWidth: 250 }}>
+                               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
+                                 Ready to build? Use these platforms to find reference code, architectural patterns, and design inspiration for <strong>{item.title}</strong>.
+                               </p>
+                               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                 <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub Repos</a>
+                                 <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>💻 CodePen</a>
+                                 <a href={`https://dribbble.com/search/${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#ea4c89', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🎨 Dribbble</a>
+                               </div>
+                             </div>
+                           </div>
+                         </div>
+                       )}
 
                        {/* Notes Section */}
                        <NotePad 

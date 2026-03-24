@@ -66,9 +66,11 @@ export default function AuthProvider({ children }) {
           if (session?.user) {
             console.log('[Auth] Valid session found:', session.user.email);
             setUser(session.user);
-            setLoading(false); // Speed up entry
             const prof = await fetchProfile(session.user.id);
-            if (mounted) setProfile(prof);
+            if (mounted) {
+              setProfile(prof);
+              setLoading(false); // Dismiss loading only after profile is loaded to avoid UI flashes
+            }
           } else {
             console.log('[Auth] No session found');
             setLoading(false);
@@ -90,11 +92,13 @@ export default function AuthProvider({ children }) {
 
       if (session?.user) {
         setUser(session.user);
-        setLoading(false); // Clear loading state as soon as we have a user to speed up entry
         
-        // Fetch profile in the background
+        // Fetch profile before clearing loading state so the dashboard has all data loaded fast
         const prof = await fetchProfile(session.user.id);
-        if (mounted) setProfile(prof);
+        if (mounted) {
+          setProfile(prof);
+          setLoading(false);
+        }
       } else {
         setUser(null);
         setProfile(null);
@@ -164,6 +168,15 @@ export default function AuthProvider({ children }) {
       password,
     });
     if (error) throw error;
+    
+    // Set state immediately to prevent race conditions before onAuthStateChange fires.
+    if (data.session?.user) {
+      setUser(data.session.user);
+      const prof = await fetchProfile(data.session.user.id);
+      setProfile(prof);
+      setLoading(false);
+    }
+    
     return data;
   };
 

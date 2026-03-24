@@ -360,6 +360,50 @@ Return ONLY valid JSON.`;
   };
 }
 
+// ─── AI Exam Generation ─────────────────────────────────────────────────────
+
+export async function generateExam(topic, difficulty, numQuestions = 5) {
+  const prompt = `Generate a modern, highly educational multiple-choice exam for the topic: "${topic}".
+Difficulty: ${difficulty || 'intermediate'}
+Number of questions: ${numQuestions}
+
+Return ONLY a JSON array of objects with the exact structure:
+[{
+  "id": "q1",
+  "question": "The question text?",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctIndex": 0, // integer 0-3
+  "explanation": "Why this is correct."
+}]
+
+The questions should be conceptual, not just syntax memorization.
+Return ONLY valid JSON array.`;
+
+  const result = await callGroq(
+    'You are a strict technical examiner. Return only valid JSON arrays.',
+    prompt,
+    { temperature: 0.6, maxTokens: 2500 }
+  );
+
+  if (result) {
+    try {
+      const cleaned = result.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleaned);
+    } catch { /* fallback below */ }
+  }
+
+  // Fallback
+  return [
+    {
+      id: "q1",
+      question: `What is a core concept of ${topic}?`,
+      options: ["Syntax", "Logic", "Structure", "All of the above"],
+      correctIndex: 3,
+      explanation: "A holistic understanding is required."
+    }
+  ];
+}
+
 // ─── Project Recommendations ────────────────────────────────────────────────
 
 export async function getProjectRecommendations(userProfile) {

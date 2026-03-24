@@ -6,7 +6,9 @@ const TABS = [
   { id: 'home', label: 'Home', icon: '🏠' },
   { id: 'learn', label: 'Learn', icon: '📚' },
   { id: 'mentor', label: 'AI Mentor', icon: '🤖' },
-  { id: 'career', label: 'Career', icon: '💼' },
+  { id: 'jobs', label: 'Jobs', icon: '💼' },
+  { id: 'career', label: 'Career', icon: '🎯' },
+  { id: 'exams', label: 'Exams', icon: '📝' },
   { id: 'profile', label: 'Profile', icon: '👤' },
 ];
 

@@ -190,6 +190,58 @@ async function searchInvidious(query, language, maxResults) {
   return null;
 }
 
+/**
+ * Direct YouTube HTML scraper (fallback if API key is invalid/missing and instances block)
+ */
+async function searchYouTubeScrape(query, maxResults) {
+  try {
+    const res = await fetch(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const match = html.match(/var ytInitialData = (\{.*?\});<\/script>/);
+    if (!match) return null;
+    
+    const data = JSON.parse(match[1]);
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents;
+    
+    if (!contents) return null;
+    
+    const results = [];
+    for (const item of contents) {
+      if (item.videoRenderer) {
+        const v = item.videoRenderer;
+        // Avoid live streams or weird items lacking duration
+        if (!v.lengthText) continue; 
+        const viewsStr = v.viewCountText?.simpleText || '0';
+        const viewsNum = parseInt(viewsStr.replace(/,/g, '').replace(/[^\d]/g, '') || '0');
+        results.push({
+          videoId: v.videoId,
+          title: v.title?.runs?.[0]?.text || '',
+          thumbnail: v.thumbnail?.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+          channelName: v.ownerText?.runs?.[0]?.text || '',
+          duration: v.lengthText?.simpleText || '',
+          views: formatCount(viewsNum),
+          likes: '',
+          viewCount: viewsNum,
+          embedUrl: getEmbedURL(v.videoId),
+          watchUrl: `https://www.youtube.com/watch?v=${v.videoId}`,
+        });
+        if (results.length >= maxResults) break;
+      }
+    }
+    return results.length > 0 ? results : null;
+  } catch (err) {
+    console.error('[YT Scrape] Error:', err.message);
+    return null;
+  }
+}
+
 // ─── GET /api/youtube-search?q=...&maxResults=2&language=English ───────────
 
 export async function GET(request) {
@@ -220,6 +272,12 @@ export async function GET(request) {
     return NextResponse.json({ videos: invResults, source: 'invidious' });
   }
 
-  // 4. No results — return empty
+  // 4. Try Direct YT HTML Scraper
+  const scrapedResults = await searchYouTubeScrape(query, maxResults);
+  if (scrapedResults?.length) {
+    return NextResponse.json({ videos: scrapedResults, source: 'scraper' });
+  }
+
+  // 5. No results — return empty
   return NextResponse.json({ videos: [], source: 'none' });
 }

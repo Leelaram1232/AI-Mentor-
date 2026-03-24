@@ -9,6 +9,7 @@ import AIMentorTab from '@/components/Dashboard/AIMentorTab';
 import CareerTab from '@/components/Dashboard/CareerTab';
 import JobsTab from '@/components/Dashboard/JobsTab';
 import ProfileTab from '@/components/Dashboard/ProfileTab';
+import ExamsTab from '@/components/Dashboard/ExamsTab';
 
 import useDashboardStore from '@/store/dashboardStore';
 import useCareerStore from '@/store/careerStore';
@@ -33,6 +34,10 @@ const TABS = [
   { 
     id: 'career', label: 'Career', 
     icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 
+  },
+  { 
+    id: 'exams', label: 'Exams', 
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 
   },
   { 
     id: 'profile', label: 'Profile', 
@@ -122,6 +127,7 @@ export default function DashboardPage() {
       case 'mentor': return <AIMentorTab />;
       case 'jobs': return <JobsTab />;
       case 'career': return <CareerTab />;
+      case 'exams': return <ExamsTab />;
       case 'profile': return <ProfileTab />;
       default: return <HomeTab />;
     }
