@@ -416,35 +416,35 @@ export default function LearnTab() {
                              <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Finding high-quality tutorials...</span>
                            </div>
                          ) : videos ? (
-                           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                             {videos.filter(vid => !vid.isFallback).length > 0 ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                              {videos.filter(vid => !vid.isFallback).length > 0 ? (
                                 videos.filter(vid => !vid.isFallback).slice(0, 2).map((vid, vIdx) => (
-                               <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                                 <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
-                                   {vid.embedUrl ? (
-                                     <iframe 
-                                       src={vid.embedUrl} 
-                                       title={vid.title}
-                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                       referrerPolicy="strict-origin-when-cross-origin"
-                                       allowFullScreen
-                                     />
-                                   ) : (
-                                     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                       Video unavailable
-                                     </div>
-                                   )}
-                                 </div>
-                                 <div style={{ padding: '1rem' }}>
-                                   <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
-                                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                                     <span>{vid.channelName}</span>
-                                     <span>👁️ {vid.views}</span>
-                                   </div>
-                                 </div>
-                               </div>
-                             ))}
+                                  <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
+                                      {vid.embedUrl ? (
+                                        <iframe 
+                                          src={vid.embedUrl} 
+                                          title={vid.title}
+                                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                          referrerPolicy="strict-origin-when-cross-origin"
+                                          allowFullScreen
+                                        />
+                                      ) : (
+                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                          Video unavailable
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div style={{ padding: '1rem' }}>
+                                      <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
+                                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{vid.channelName}</span>
+                                        <span>👁️ {vid.views}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
                               ) : (
                                 <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
                                   <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
@@ -453,8 +453,8 @@ export default function LearnTab() {
                                   <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title)} target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-secondary" style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube</a>
                                 </div>
                               )}
-                           </div>
-                         ) : (
+                            </div>
+                          ) : (
                            <button onClick={() => loadVideoForStep(item)} className="glass-panel" style={{ width: '100%', padding: '3rem 2rem', borderRadius: 16, cursor: 'pointer', borderStyle: 'dashed', background: 'var(--primary-blue-light)', color: 'var(--primary-blue)', textAlign: 'center', transition: 'all 0.2s' }}>
                              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎬</div>
                              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Load Video Tutorials</div>
