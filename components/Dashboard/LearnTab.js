@@ -68,7 +68,7 @@ const CAT_COLORS = {
 export default function LearnTab() {
   const { user, profile, refreshProfile } = useAuth();
   const { 
-    setActiveTab, setMentorTopic, 
+    setActiveTab, setMentorTopic, setExamTopic,
     roadmap, setRoadmap, 
     bookmarks, setBookmarks, 
     skillGap, setSkillGap 
@@ -383,7 +383,7 @@ export default function LearnTab() {
                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                          <button 
                            className="btn-ce btn-ce-secondary" 
-                           onClick={() => setActiveTab('exams')}
+                           onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
                            style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}
                          >
                            📝 Take Exam

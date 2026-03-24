@@ -24,6 +24,23 @@ export default function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Preload from cache instantly on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedUser = localStorage.getItem('cached_user');
+        const cachedProfile = localStorage.getItem('cached_profile');
+        if (cachedUser && cachedProfile) {
+          setUser(JSON.parse(cachedUser));
+          setProfile(JSON.parse(cachedProfile));
+          setLoading(false); // Instantly drop the loading screen
+        }
+      } catch (e) {
+        console.warn('Failed to parse cached auth state:', e);
+      }
+    }
+  }, []);
+
   // Fetch profile from Supabase
   const fetchProfile = async (userId) => {
     try {
@@ -43,9 +60,15 @@ export default function AuthProvider({ children }) {
             .select()
             .single();
             
-          if (!insertError) return newProfile;
+          if (!insertError) {
+             if (typeof window !== 'undefined') localStorage.setItem('cached_profile', JSON.stringify(newProfile));
+             return newProfile;
+          }
         }
         throw error;
+      }
+      if (typeof window !== 'undefined' && data) {
+         localStorage.setItem('cached_profile', JSON.stringify(data));
       }
       return data;
     } catch (err) {
@@ -66,6 +89,7 @@ export default function AuthProvider({ children }) {
           if (session?.user) {
             console.log('[Auth] Valid session found:', session.user.email);
             setUser(session.user);
+            if (typeof window !== 'undefined') localStorage.setItem('cached_user', JSON.stringify(session.user));
             const prof = await fetchProfile(session.user.id);
             if (mounted) {
               setProfile(prof);
@@ -73,6 +97,12 @@ export default function AuthProvider({ children }) {
             }
           } else {
             console.log('[Auth] No session found');
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('cached_user');
+              localStorage.removeItem('cached_profile');
+            }
+            setUser(null);
+            setProfile(null);
             setLoading(false);
           }
         }
@@ -92,6 +122,7 @@ export default function AuthProvider({ children }) {
 
       if (session?.user) {
         setUser(session.user);
+        if (typeof window !== 'undefined') localStorage.setItem('cached_user', JSON.stringify(session.user));
         
         // Fetch profile before clearing loading state so the dashboard has all data loaded fast
         const prof = await fetchProfile(session.user.id);
@@ -100,6 +131,10 @@ export default function AuthProvider({ children }) {
           setLoading(false);
         }
       } else {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('cached_user');
+          localStorage.removeItem('cached_profile');
+        }
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -227,6 +262,7 @@ export default function AuthProvider({ children }) {
       .single();
     if (error) throw error;
     setProfile(data);
+    if (typeof window !== 'undefined') localStorage.setItem('cached_profile', JSON.stringify(data));
     return data;
   };
 

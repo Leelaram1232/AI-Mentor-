@@ -8,7 +8,7 @@ import { addXP, logLearningActivity, awardBadge } from '@/utils/authClient';
 
 export default function ExamsTab() {
   const { user, profile, refreshProfile } = useAuth();
-  const { roadmap } = useDashboardStore();
+  const { roadmap, examTopic, setExamTopic } = useDashboardStore();
 
   const [examState, setExamState] = useState('selection'); // selection, loading, taking, results
   const [selectedTopic, setSelectedTopic] = useState('');
@@ -17,6 +17,7 @@ export default function ExamsTab() {
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(0);
+  const [autoStarted, setAutoStarted] = useState(false);
   
   // Extract unique topics from the user's roadmap
   const roadmapTopics = Array.from(new Set(
@@ -25,6 +26,15 @@ export default function ExamsTab() {
   
   const defaultTopics = ['Programming Fundamentals', 'Data Structures', 'System Design', 'Web Architecture', 'Database Management'];
   const topicsToDisplay = roadmapTopics.length > 0 ? roadmapTopics : defaultTopics;
+
+  // Auto-start exam when navigated from LearnTab with a specific topic
+  useEffect(() => {
+    if (examTopic && !autoStarted) {
+      setAutoStarted(true);
+      setExamTopic(null); // Clear store so it doesn't re-trigger
+      startExam(examTopic);
+    }
+  }, [examTopic]);
 
   const startExam = async (topic) => {
     setSelectedTopic(topic);

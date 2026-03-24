@@ -7,6 +7,9 @@ const useDashboardStore = create((set) => ({
   mentorTopic: null,
   setMentorTopic: (topic) => set({ mentorTopic: topic }),
 
+  examTopic: null,
+  setExamTopic: (topic) => set({ examTopic: topic }),
+
   // Persistence for Learn Tab
   roadmap: null,
   setRoadmap: (data) => set({ roadmap: data }),
