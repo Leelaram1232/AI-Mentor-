@@ -108,17 +108,17 @@ export default function SkillSelection() {
                                                 cursor: 'pointer',
                                                 fontSize: '0.95rem',
                                                 padding: '0.75rem 1.75rem',
-                                                fontWeight: 500,
+                                                fontWeight: 600,
                                                 borderRadius: '50px',
-                                                border: `1px solid ${isSelected ? '#3b82f6' : '#e2e8f0'}`,
-                                                background: isSelected ? 'rgba(59, 130, 246, 0.05)' : '#ffffff',
-                                                color: isSelected ? '#2563eb' : 'var(--text-primary)',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                                                transition: 'all 0.2s ease',
+                                                border: `2px solid ${isSelected ? 'var(--primary-blue)' : 'var(--border-color)'}`,
+                                                background: isSelected ? 'var(--primary-blue-light)' : 'var(--card-bg)',
+                                                color: isSelected ? 'var(--primary-blue)' : 'var(--text-primary)',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 '&:hover': {
-                                                    borderColor: '#3b82f6',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.05)'
+                                                    borderColor: 'var(--primary-blue)',
+                                                    transform: 'translateY(-3px)',
+                                                    boxShadow: '0 8px 20px rgba(0,0,0,0.1)'
                                                 }
                                             }}
                                         >

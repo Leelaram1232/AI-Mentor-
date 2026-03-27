@@ -10,6 +10,7 @@ import CareerTab from '@/components/Dashboard/CareerTab';
 import JobsTab from '@/components/Dashboard/JobsTab';
 import ProfileTab from '@/components/Dashboard/ProfileTab';
 import ExamsTab from '@/components/Dashboard/ExamsTab';
+import FloatingMentor from '@/components/Dashboard/FloatingMentor';
 
 import useDashboardStore from '@/store/dashboardStore';
 import useCareerStore from '@/store/careerStore';
@@ -180,6 +181,8 @@ export default function DashboardPage() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem 6rem' }}>
         {renderTab()}
       </div>
+
+      <FloatingMentor />
 
       {/* Bottom Navigation (glassmorphism) */}
       <nav className="bottom-nav">
