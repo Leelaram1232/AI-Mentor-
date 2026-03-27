@@ -374,7 +374,8 @@ export default function LearnTab() {
                        </div>
                      </div>
 
-                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', marginTop: '1.5rem' }}>
+                     {/* Video + NotePad side by side */}
+                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '1.5rem' }}>
                        {/* Tutorial Videos */}
                        <div>
                          <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -390,7 +391,7 @@ export default function LearnTab() {
                                style={{ marginTop: '0.75rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube now</a>
                            </div>
                          ) : validVideos.length > 0 ? (
-                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+                           <div style={{ display: 'grid', gap: '1.25rem' }}>
                              {validVideos.slice(0, 2).map((vid, vIdx) => (
                                <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
                                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
@@ -433,33 +434,7 @@ export default function LearnTab() {
                          )}
                        </div>
 
-                       {/* Inline Exam — Always visible */}
-                       <div>
-                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                           <span style={{ fontSize: '1.3rem' }}>📝</span> Topic Exam
-                         </h4>
-                         <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => { refreshProfile(); }} />
-                       </div>
-
-                       {item.category === 'Projects' && (
-                         <div style={{ gridColumn: '1 / -1', marginTop: '1rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
-                           <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🚀 Project Assets & Inspiration</h4>
-                           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                             <img src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} alt="Project cover" 
-                               style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
-                             <div style={{ flex: 1, minWidth: 250 }}>
-                               <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                 Ready to build? Find reference code and design inspiration for <strong>{item.title}</strong>.
-                               </p>
-                               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                 <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub</a>
-                                 <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>💻 CodePen</a>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                       )}
-
+                       {/* NotePad — side by side with video */}
                        <NotePad 
                          initialValue={notes} 
                          onSave={(val) => handleNoteChange(cacheKey, val)} 
@@ -467,6 +442,33 @@ export default function LearnTab() {
                          itemTitle={item.title}
                        />
                      </div>
+
+                     {/* Exam — full width below video+notepad */}
+                     <div style={{ marginTop: '2rem' }}>
+                       <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                         <span style={{ fontSize: '1.3rem' }}>📝</span> Topic Exam
+                       </h4>
+                       <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => { refreshProfile(); }} />
+                     </div>
+
+                     {item.category === 'Projects' && (
+                       <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
+                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🚀 Project Assets & Inspiration</h4>
+                         <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                           <img src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} alt="Project cover" 
+                             style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
+                           <div style={{ flex: 1, minWidth: 250 }}>
+                             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
+                               Find reference code and design inspiration for <strong>{item.title}</strong>.
+                             </p>
+                             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                               <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub</a>
+                               <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>💻 CodePen</a>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     )}
                    </div>
                  );
               })}

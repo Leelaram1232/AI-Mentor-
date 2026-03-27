@@ -631,3 +631,25 @@ Generate 8-12 career positions with title, relevance (0-100), impact (0-100), de
     { title: 'Specialist', relevance: 85, impact: 65, description: 'Deep expertise in a specific area' },
   ];
 }
+
+/**
+ * AI Mentor analyzes exam performance and provides 1-on-1 tutoring/guidance.
+ */
+export async function analyzeExamPerformance(topic, score, total, results) {
+  const prompt = `Topic: ${topic}
+Score: ${score}/${total} (${Math.round((score / total) * 100)}%)
+
+Question Details:
+${results.map((r, i) => `Q${i + 1}: ${r.question}\nCorrect: ${r.isCorrect ? 'Yes' : 'No'}\nExplanation: ${r.explanation}`).join('\n\n')}
+
+ROLE: You are the AI Career Mentor, created in 2026 by Leela Ram Samavedam. Conduct a deep, teacher-like analysis.
+GOAL: Provide a 1-on-1 coaching response. If the user failed (<60%), be highly encouraging but identify exactly where they need to study. If they passed, challenge them with deeper insights into the topic.
+TONE: Warm, professional, and deeply insightful. Use headings and bullet points. Mention their specific mistakes and how to fix them.`;
+
+  return await callGroq(
+    'You are a highly premium AI Career Mentor. Provide deep teaching, guidance, and encouragement.',
+    prompt,
+    { temperature: 0.7, maxTokens: 1500 }
+  );
+}
+

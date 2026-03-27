@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { generateExam } from '@/utils/groqApi';
+import { generateExam, analyzeExamPerformance } from '@/utils/groqApi';
 import { addXP, logLearningActivity, awardBadge } from '@/utils/authClient';
 
 export default function InlineExam({ topic, userId, onComplete }) {
@@ -9,6 +9,8 @@ export default function InlineExam({ topic, userId, onComplete }) {
   const [qIdx, setQIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(0);
+  const [mentorFeedback, setMentorFeedback] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
 
   const startExam = async () => {
     setState('loading');
@@ -27,10 +29,26 @@ export default function InlineExam({ topic, userId, onComplete }) {
 
   const submitExam = async () => {
     let s = 0;
-    questions.forEach((q, i) => { if (answers[i] === q.correctIndex) s++; });
+    const resultDetails = questions.map((q, i) => {
+      const correct = answers[i] === q.correctIndex;
+      if (correct) s++;
+      return { 
+        question: q.question, 
+        isCorrect: correct, 
+        explanation: q.explanation 
+      };
+    });
+    
     setScore(s);
     setState('results');
+    setAnalyzing(true);
+
     try {
+      // Get AI Mentor's deep analysis
+      const feedback = await analyzeExamPerformance(topic, s, questions.length, resultDetails);
+      setMentorFeedback(feedback || 'Great job completing the exam! Focus on the concepts where you made mistakes to improve further.');
+      setAnalyzing(false);
+
       const xp = s * 10;
       if (xp > 0) {
         await addXP(userId, xp);
@@ -40,7 +58,10 @@ export default function InlineExam({ topic, userId, onComplete }) {
         await awardBadge(userId, { badge_name: 'Perfect Scorer', badge_icon: '🎯', badge_description: `Perfect on ${topic}` });
       }
       if (onComplete) onComplete(s, questions.length);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+      setAnalyzing(false);
+    }
   };
 
   if (state === 'idle') {
@@ -147,48 +168,74 @@ export default function InlineExam({ topic, userId, onComplete }) {
     const passed = pct >= 60;
 
     return (
-      <div className="glass-panel fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}` }}>
+      <div className="glass-panel fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
+        
+        {/* Mentor's Transparent Guidance Overlay (if analyzing) */}
+        {analyzing && (
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', zIndex: 10, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="ai-loader" style={{ width: 50, height: 50, marginBottom: '1rem' }}><div className="ai-ring"></div></div>
+            <div style={{ fontWeight: 800, color: 'var(--primary-blue)' }}>AI Mentor is analyzing your performance...</div>
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{
-            width: 90, height: 90, borderRadius: '50%', margin: '0 auto 1rem',
+            width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1.25rem',
             background: passed ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-            border: `5px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+            border: `4px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 900, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}%</span>
+            <span style={{ fontSize: '1.5rem', fontWeight: 900, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}%</span>
           </div>
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
-            {passed ? 'Exam Passed! 🎉' : 'Not Passed — 60% Required'}
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
+            {passed ? 'Exam Passed! 🎉' : 'Needs Review — 60% Required'}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            {score}/{questions.length} correct ({pct}%) • {passed ? `+${score * 10} XP earned!` : 'Score at least 60% to pass. Retake below.'}
+            {score}/{questions.length} correct ({pct}%) • {passed ? `+${score * 10} XP earned!` : 'Score at least 60% to pass.'}
           </p>
         </div>
 
+        {/* AI Mentor's Guidance - The Transparent "Screen" effect */}
+        {mentorFeedback && !analyzing && (
+          <div style={{ 
+            marginTop: '1.5rem', marginBottom: '2rem', padding: '2rem', 
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(147,51,234,0.08) 100%)', 
+            borderRadius: 20, border: '1px solid rgba(59,130,246,0.2)',
+            backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0,0,0,0.05)'
+          }}>
+            <h4 style={{ fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary-blue)' }}>
+              <span style={{ fontSize: '1.4rem' }}>🧠</span> Mentor's Personalized Guidance
+            </h4>
+            <div style={{ 
+              fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-primary)', 
+              maxHeight: '400px', overflowY: 'auto', paddingRight: '1rem',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {mentorFeedback}
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <h4 style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Detailed Question Review</h4>
           {questions.map((q, i) => {
             const correct = answers[i] === q.correctIndex;
             return (
               <div key={i} style={{ padding: '1rem', borderRadius: 12,
-                border: `1px solid ${correct ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                background: correct ? 'rgba(16,185,129,0.04)' : 'rgba(239,68,68,0.04)' }}>
+                border: `1px solid ${correct ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                background: correct ? 'rgba(16,185,129,0.02)' : 'rgba(239,68,68,0.02)' }}>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                  <span>{correct ? '✅' : '❌'}</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{q.question}</span>
-                </div>
-                <div style={{ paddingLeft: '1.6rem', fontSize: '0.85rem' }}>
-                  {!correct && <div style={{ color: 'var(--error-red)', fontWeight: 500 }}>Your answer: {q.options[answers[i]]}</div>}
-                  <div style={{ color: 'var(--success-green)', fontWeight: 600 }}>Correct: {q.options[q.correctIndex]}</div>
-                  <div style={{ color: 'var(--text-secondary)', marginTop: 4, background: 'var(--glass-bg)', padding: '0.5rem', borderRadius: 6 }}>💡 {q.explanation}</div>
+                  <span style={{ flexShrink: 0 }}>{correct ? '✅' : '❌'}</span>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{q.question}</span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 10, fontWeight: 600 }}>🔄 Retake</button>
-          <button className="btn-ce btn-ce-secondary" onClick={() => setState('idle')} style={{ borderRadius: 10, fontWeight: 600 }}>Close</button>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 10, fontWeight: 600, padding: '0.75rem 1.5rem' }}>🔄 Retake Exam</button>
+          <button className="btn-ce btn-ce-secondary" onClick={() => { setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 10, fontWeight: 600, padding: '0.75rem 1.5rem' }}>Finish Session</button>
         </div>
       </div>
     );
