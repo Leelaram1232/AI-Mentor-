@@ -7,6 +7,7 @@ import { generateLearningRoadmap, analyzeSkillGap } from '@/utils/groqApi';
 import { searchYouTubeVideos, buildYouTubeSearchQuery, getYouTubeSearchURL } from '@/utils/youtubeApi';
 import useDashboardStore from '@/store/dashboardStore';
 import { jsPDF } from 'jspdf';
+import InlineExam from './InlineExam';
 
 // --- Subcomponents for Performance ---
 function NotePad({ initialValue, onSave, onDownload, itemTitle }) {
@@ -82,6 +83,7 @@ export default function LearnTab() {
   const [videoCache, setVideoCache] = useState({});
   const [loadingVideo, setLoadingVideo] = useState(null);
   const [userNotes, setUserNotes] = useState({});
+  const [showExam, setShowExam] = useState({});
   const notesRef = useRef({});
 
   useEffect(() => { 
@@ -356,9 +358,12 @@ export default function LearnTab() {
                           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: 700 }}>{item.description}</p>
                        </div>
                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                         <button className="btn-ce btn-ce-secondary" onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
-                           📝 Take Exam
+                         <button className="btn-ce btn-ce-secondary" onClick={() => setShowExam(prev => ({ ...prev, [cacheKey]: !prev[cacheKey] }))}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12,
+                             background: showExam[cacheKey] ? 'var(--primary-blue)' : undefined,
+                             color: showExam[cacheKey] ? '#fff' : undefined,
+                             border: showExam[cacheKey] ? 'none' : undefined }}>
+                           📝 {showExam[cacheKey] ? 'Hide Exam' : 'Take Test'}
                          </button>
                          <button className="btn-ce btn-ce-secondary" onClick={() => learnWithMentor(item)}
                            style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
@@ -458,6 +463,16 @@ export default function LearnTab() {
                                </div>
                              </div>
                            </div>
+                         </div>
+                       )}
+
+                       {/* Inline Exam Section */}
+                       {showExam[cacheKey] && (
+                         <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                           <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📝 Topic Exam</h4>
+                           <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => {
+                             refreshProfile();
+                           }} />
                          </div>
                        )}
 
