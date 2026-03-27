@@ -45,10 +45,19 @@ export default function InlineExam({ topic, userId, onComplete }) {
 
   if (state === 'idle') {
     return (
-      <button onClick={startExam} className="btn-ce btn-ce-primary"
-        style={{ width: '100%', padding: '1rem', borderRadius: 14, fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-        📝 Take Test on {topic.length > 30 ? topic.substring(0, 30) + '...' : topic}
-      </button>
+      <div className="glass-panel" style={{ borderRadius: 16, padding: '1.5rem', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>📝 Topic Assessment</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5 AI-generated questions • 60% to pass • Earn up to 50 XP</div>
+          </div>
+          <span className="meta-badge" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 700, fontSize: '0.75rem' }}>⚡ Required</span>
+        </div>
+        <button onClick={startExam} className="btn-ce btn-ce-primary"
+          style={{ width: '100%', padding: '0.85rem', borderRadius: 12, fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+          📝 Take Test
+        </button>
+      </div>
     );
   }
 
@@ -73,9 +82,12 @@ export default function InlineExam({ topic, userId, onComplete }) {
 
     return (
       <div className="glass-panel fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: '2px solid var(--primary-blue)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <span className="meta-badge" style={{ background: 'rgba(59,130,246,0.1)', color: 'var(--primary-blue)', fontWeight: 700 }}>📝 Exam: {topic.length > 25 ? topic.substring(0, 25) + '...' : topic}</span>
-          <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Q{qIdx + 1}/{questions.length}</span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <span className="meta-badge" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontWeight: 600, fontSize: '0.7rem' }}>60% to pass</span>
+            <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Q{qIdx + 1}/{questions.length}</span>
+          </div>
         </div>
 
         {/* Progress dots */}
@@ -146,10 +158,10 @@ export default function InlineExam({ topic, userId, onComplete }) {
             <span style={{ fontSize: '1.8rem', fontWeight: 900, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}%</span>
           </div>
           <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
-            {passed ? 'Exam Passed! 🎉' : 'Needs Review'}
+            {passed ? 'Exam Passed! 🎉' : 'Not Passed — 60% Required'}
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            {score}/{questions.length} correct (+{score * 10} XP)
+            {score}/{questions.length} correct ({pct}%) • {passed ? `+${score * 10} XP earned!` : 'Score at least 60% to pass. Retake below.'}
           </p>
         </div>
 
