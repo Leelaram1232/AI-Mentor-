@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const YT_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
+const YT_API_KEY = process.env.YOUTUBE_API_KEY || process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
 const LANG_CODES = {
   'English': 'en', 'Hindi': 'hi', 'Telugu': 'te', 'Tamil': 'ta',
@@ -59,7 +59,7 @@ async function searchYouTubeAPI(query, language, maxResults) {
 
   try {
     const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) {
       console.error('[YT API] Search failed:', res.status, await res.text().catch(() => ''));
@@ -72,7 +72,7 @@ async function searchYouTubeAPI(query, language, maxResults) {
     const videoIds = data.items.map(i => i.id.videoId).join(',');
     const statsRes = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds}&key=${YT_API_KEY}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(6000) }
     );
     const statsData = statsRes.ok ? await statsRes.json() : { items: [] };
     const statsMap = {};
@@ -111,13 +111,14 @@ async function searchPiped(query, maxResults) {
     'https://api.piped.yt',
   ];
 
-  for (const instance of instances) {
-    try {
+  // Try all instances in parallel, use first success
+  const results = await Promise.allSettled(
+    instances.map(async (instance) => {
       const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) continue;
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) throw new Error(`${instance} returned ${res.status}`);
       const data = await res.json();
-      if (!data.items?.length) continue;
+      if (!data.items?.length) throw new Error('No items');
 
       return data.items
         .filter(v => v.type === 'stream')
@@ -139,9 +140,11 @@ async function searchPiped(query, maxResults) {
         })
         .filter(v => v.videoId)
         .sort((a, b) => b.viewCount - a.viewCount);
-    } catch {
-      continue;
-    }
+    })
+  );
+
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value?.length) return r.value;
   }
   return null;
 }
@@ -156,16 +159,18 @@ async function searchInvidious(query, language, maxResults) {
     'https://iv.datura.network',
   ];
 
-  for (const instance of instances) {
-    try {
-      const langCode = LANG_CODES[language] || 'en';
+  const langCode = LANG_CODES[language] || 'en';
+
+  // Try all instances in parallel, use first success
+  const results = await Promise.allSettled(
+    instances.map(async (instance) => {
       const res = await fetch(
         `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=view_count&region=${langCode}`,
-        { signal: AbortSignal.timeout(8000) }
+        { signal: AbortSignal.timeout(5000) }
       );
-      if (!res.ok) continue;
+      if (!res.ok) throw new Error(`${instance} returned ${res.status}`);
       const data = await res.json();
-      if (!Array.isArray(data) || !data.length) continue;
+      if (!Array.isArray(data) || !data.length) throw new Error('No data');
 
       return data
         .filter(v => v.type === 'video')
@@ -183,9 +188,11 @@ async function searchInvidious(query, language, maxResults) {
           embedUrl: getEmbedURL(v.videoId),
           watchUrl: `https://www.youtube.com/watch?v=${v.videoId}`,
         }));
-    } catch {
-      continue;
-    }
+    })
+  );
+
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value?.length) return r.value;
   }
   return null;
 }
@@ -200,7 +207,7 @@ async function searchYouTubeScrape(query, maxResults) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -254,30 +261,31 @@ export async function GET(request) {
     return NextResponse.json({ videos: [] });
   }
 
-  // 1. Try YouTube Data API
+  // 1. Try YouTube Data API first (most reliable when key is valid)
   const ytResults = await searchYouTubeAPI(query, language, maxResults);
   if (ytResults?.length) {
     return NextResponse.json({ videos: ytResults, source: 'youtube' });
   }
 
-  // 2. Try Piped API
-  const pipedResults = await searchPiped(query, maxResults);
-  if (pipedResults?.length) {
-    return NextResponse.json({ videos: pipedResults, source: 'piped' });
+  // 2. If official API failed, try ALL fallbacks in parallel for speed
+  console.log('[YT Search] Official API failed/no key, trying fallbacks in parallel...');
+  const [pipedResult, invResult, scrapeResult] = await Promise.allSettled([
+    searchPiped(query, maxResults),
+    searchInvidious(query, language, maxResults),
+    searchYouTubeScrape(query, maxResults),
+  ]);
+
+  if (pipedResult.status === 'fulfilled' && pipedResult.value?.length) {
+    return NextResponse.json({ videos: pipedResult.value, source: 'piped' });
+  }
+  if (invResult.status === 'fulfilled' && invResult.value?.length) {
+    return NextResponse.json({ videos: invResult.value, source: 'invidious' });
+  }
+  if (scrapeResult.status === 'fulfilled' && scrapeResult.value?.length) {
+    return NextResponse.json({ videos: scrapeResult.value, source: 'scraper' });
   }
 
-  // 3. Try Invidious API
-  const invResults = await searchInvidious(query, language, maxResults);
-  if (invResults?.length) {
-    return NextResponse.json({ videos: invResults, source: 'invidious' });
-  }
-
-  // 4. Try Direct YT HTML Scraper
-  const scrapedResults = await searchYouTubeScrape(query, maxResults);
-  if (scrapedResults?.length) {
-    return NextResponse.json({ videos: scrapedResults, source: 'scraper' });
-  }
-
-  // 5. No results — return empty
+  // 3. All failed — return empty
+  console.warn('[YT Search] All sources failed for query:', query);
   return NextResponse.json({ videos: [], source: 'none' });
 }

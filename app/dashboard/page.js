@@ -90,7 +90,7 @@ export default function DashboardPage() {
       !(profile.experience_level || '').trim();
 
     if (storeHasData && profileThin) {
-      saveProfileToSupabase()
+      saveProfileToSupabase(user.id)
         .then((res) => {
           if (res?.success) return refreshProfile();
         })

@@ -13,7 +13,7 @@ import { useAuth } from '@/components/Auth/AuthProvider';
 
 export default function BubbleGraph() {
     const router = useRouter();
-    const { user, refreshProfile } = useAuth();
+    const { user } = useAuth();
     const { userData, saveProfileToSupabase, updateUserData } = useCareerStore();
     const [centerNode, setCenterNode] = useState(userData.selectedRole?.title || userData.futureGoals || 'Professional');
     const [surroundingNodes, setSurroundingNodes] = useState([]);
@@ -47,8 +47,9 @@ export default function BubbleGraph() {
         if (user) {
             setIsSaving(true);
             try {
-                const res = await saveProfileToSupabase();
-                if (res?.success) await refreshProfile();
+                // Pass user.id directly to avoid redundant getCurrentUser() network call
+                await saveProfileToSupabase(user.id);
+                // Navigate immediately — dashboard will load fresh profile on mount
                 router.push('/dashboard');
             } catch (err) {
                 console.error(err);

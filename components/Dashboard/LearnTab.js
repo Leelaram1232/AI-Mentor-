@@ -74,19 +74,29 @@ export default function LearnTab() {
     skillGap, setSkillGap 
   } = useDashboardStore();
 
-  const [loading, setLoading] = useState(!roadmap); // Only show loading if we don't have cached data
+  const [loading, setLoading] = useState(!roadmap);
   const [generating, setGenerating] = useState(false);
   const [analyzingGap, setAnalyzingGap] = useState(false);
   const [section, setSection] = useState('roadmap');
   const [expandedDay, setExpandedDay] = useState(1);
   const [videoCache, setVideoCache] = useState({});
   const [loadingVideo, setLoadingVideo] = useState(null);
-  const [userNotes, setUserNotes] = useState({}); // Stores user prep notes for each step
-  const notesRef = useRef({}); // For keeping track of notes across renders
+  const [userNotes, setUserNotes] = useState({});
+  const notesRef = useRef({});
 
   useEffect(() => { 
     if (user) loadData(!roadmap); 
   }, [user]);
+
+  // Auto-load videos when a day is expanded
+  useEffect(() => {
+    if (!roadmap?.roadmap_items?.length) return;
+    const dayItems = roadmap.roadmap_items.filter(i => (i.day_number || i.step_number) === expandedDay);
+    dayItems.forEach(item => {
+      const key = item.id || item.title;
+      if (!videoCache[key]) loadVideoForStep(item);
+    });
+  }, [expandedDay, roadmap]);
 
   const loadData = async (isInitial = false) => {
     try {
@@ -95,7 +105,6 @@ export default function LearnTab() {
       setRoadmap(roadmapData);
       setBookmarks(bm.status === 'fulfilled' ? bm.value : []);
       
-      // Auto-expand today's step only on initial load or if not already set
       if (isInitial && roadmapData?.roadmap_items?.length) {
         const startDate = new Date(roadmapData.generated_at);
         const daysSinceStart = Math.min(
@@ -111,7 +120,6 @@ export default function LearnTab() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      // Refresh profile first so we get latest language & duration from Profile tab
       const freshProfile = await refreshProfile();
       const activeProfile = freshProfile || profile;
       const items = await generateLearningRoadmap(activeProfile);
@@ -126,7 +134,6 @@ export default function LearnTab() {
         step_number: i + 1,
         day_number: item.day_number || i + 1,
       })));
-      // Clear video & notes cache so new content matches the new roadmap + language
       setVideoCache({});
       await addXP(user.id, 20);
       await refreshProfile();
@@ -165,7 +172,6 @@ export default function LearnTab() {
       try {
         const lang = profile?.preferred_language || 'English';
         const query = item.youtube_search_query || buildYouTubeSearchQuery(item.title, lang);
-        // Request strictly 2 videos for better variety
         const videos = await searchYouTubeVideos(query, 2, lang);
         setVideoCache(prev => ({ ...prev, [key]: videos }));
       } catch (e) { console.error(e); }
@@ -175,7 +181,6 @@ export default function LearnTab() {
 
   const handleNoteChange = (key, text) => {
     setUserNotes(prev => ({ ...prev, [key]: text }));
-    // Save to local storage for persistence
     localStorage.setItem(`notes_${user.id}_${key}`, text);
   };
 
@@ -183,32 +188,24 @@ export default function LearnTab() {
     const key = item.id || item.title;
     const notes = userNotes[key] || '';
     const doc = new jsPDF();
-    
-    // Add header
     doc.setFontSize(22);
-    doc.setTextColor(37, 99, 235); // Primary blue
+    doc.setTextColor(37, 99, 235);
     doc.text('AI Mentor', 105, 20, { align: 'center' });
-    
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
     doc.text('Study Notes', 105, 30, { align: 'center' });
-    
     doc.setDrawColor(200, 200, 200);
     doc.line(20, 35, 190, 35);
-    
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(`Topic: ${item.title}`, 20, 45);
     doc.text(`Day: ${item.day_number || item.step_number}`, 20, 52);
-    
     doc.setFont('helvetica', 'normal');
     const splitText = doc.splitTextToSize(notes || 'No notes prepared yet.', 170);
     doc.text(splitText, 20, 65);
-    
     doc.setFontSize(10);
     doc.setTextColor(150, 150, 150);
     doc.text(`Generated on ${new Date().toLocaleDateString()} via AI Mentor Dashboard`, 105, 285, { align: 'center' });
-    
     doc.save(`Notes_${item.title.replace(/\s+/g, '_')}.pdf`);
   };
 
@@ -223,7 +220,6 @@ export default function LearnTab() {
   const totalDays = parseInt(profile?.course_duration_days) || 30;
   const language = profile?.preferred_language || 'English';
 
-  // Calculate current day
   const startDate = roadmap ? new Date(roadmap.generated_at) : new Date();
   const currentDay = Math.min(Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1, totalDays);
 
@@ -233,7 +229,6 @@ export default function LearnTab() {
     <div style={{ display: 'grid', gap: '1rem' }}>
       <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Learning Workspace</h2>
 
-      {/* Section Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         {[
           { id: 'roadmap', l: 'Roadmap' },
@@ -245,7 +240,6 @@ export default function LearnTab() {
         ))}
       </div>
 
-      {/* ═══════════════ ROADMAP ═══════════════ */}
       {section === 'roadmap' && (
         !roadmap ? (
           <div className="glass-card" style={{ borderRadius: 16, padding: '2rem', textAlign: 'center' }}>
@@ -265,7 +259,6 @@ export default function LearnTab() {
           </div>
         ) : (
           <>
-            {/* Progress Header */}
             <div className="glass-card" style={{ borderRadius: 16, padding: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
@@ -277,14 +270,8 @@ export default function LearnTab() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <button 
-                    onClick={handleGenerate} 
-                    disabled={generating}
-                    style={{
-                      background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
-                      padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: '0.75rem', cursor: 'pointer',
-                      transition: 'all 0.2s', fontWeight: 600
-                    }}
+                  <button onClick={handleGenerate} disabled={generating}
+                    style={{ background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 600 }}
                     onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary-blue)'}
                     onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
                   >
@@ -302,23 +289,17 @@ export default function LearnTab() {
               </div>
             </div>
 
-            {/* Today's Highlight */}
             <div style={{ padding: '0.85rem 1.1rem', borderRadius: 14, background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ fontSize: '1.5rem' }}>📍</span>
               <div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>Today is Day {currentDay} of your {totalDays}-day plan</div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
-                  {currentDay <= totalDays ? `${totalDays - currentDay} days remaining • Keep going!` : 'You\'ve completed the planned duration!'}
+                  {currentDay <= totalDays ? `${totalDays - currentDay} days remaining • Keep going!` : "You've completed the planned duration!"}
                 </div>
               </div>
             </div>
 
-            {/* Day Selector (Side Scrolling Bar) */}
-            <div style={{ 
-              display: 'flex', gap: '0.75rem', overflowX: 'auto', padding: '0.5rem 0 1.25rem', 
-              scrollbarWidth: 'none', msOverflowStyle: 'none',
-              scrollBehavior: 'smooth'
-            }} className="no-scrollbar">
+            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', padding: '0.5rem 0 1.25rem', scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: 'smooth' }} className="no-scrollbar">
               {Array.from(new Set((roadmap.roadmap_items || []).map(i => i.day_number || i.step_number)))
                 .sort((a, b) => a - b)
                 .map(dayNum => {
@@ -326,14 +307,8 @@ export default function LearnTab() {
                   const dayItems = (roadmap.roadmap_items || []).filter(i => (i.day_number || i.step_number) === dayNum);
                   const allDone = dayItems.every(i => i.is_completed);
                   return (
-                    <button 
-                      key={`day-btn-${dayNum}`}
-                      onClick={() => {
-                        setExpandedDay(dayNum);
-                        dayItems.forEach(item => {
-                          if (!videoCache[item.id || item.title]) loadVideoForStep(item);
-                        });
-                      }}
+                    <button key={`day-btn-${dayNum}`}
+                      onClick={() => setExpandedDay(dayNum)}
                       style={{
                         flexShrink: 0, padding: '0.75rem 1.25rem', borderRadius: 14,
                         border: isSelected ? '2px solid var(--primary-blue)' : '1px solid var(--border-color)',
@@ -353,7 +328,6 @@ export default function LearnTab() {
                 })}
             </div>
 
-            {/* Selected Day Content */}
             {(roadmap.roadmap_items || [])
               .filter(item => (item.day_number || item.step_number) === expandedDay)
               .map((item, idx) => {
@@ -364,6 +338,7 @@ export default function LearnTab() {
                  const videos = videoCache[cacheKey];
                  const notes = userNotes[cacheKey] || localStorage.getItem(`notes_${user.id}_${cacheKey}`) || '';
                  const isDone = item.is_completed;
+                 const validVideos = videos ? videos.filter(vid => !vid.isFallback && vid.videoId) : [];
                  
                  return (
                    <div key={key} className="glass-card fade-in-up" style={{
@@ -381,36 +356,24 @@ export default function LearnTab() {
                           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: 700 }}>{item.description}</p>
                        </div>
                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                         <button 
-                           className="btn-ce btn-ce-secondary" 
-                           onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}
-                         >
+                         <button className="btn-ce btn-ce-secondary" onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
                            📝 Take Exam
                          </button>
-                         <button 
-                           className="btn-ce btn-ce-secondary" 
-                           onClick={() => learnWithMentor(item)}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}
-                         >
+                         <button className="btn-ce btn-ce-secondary" onClick={() => learnWithMentor(item)}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
                            🤖 AI Mentor
                          </button>
-                         <button 
-                           className="btn-ce" 
-                           onClick={() => handleToggleStep(item)}
-                           style={{ 
-                             padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 700, borderRadius: 12,
+                         <button className="btn-ce" onClick={() => handleToggleStep(item)}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 700, borderRadius: 12,
                              background: isDone ? 'var(--success-green)' : 'var(--primary-blue)',
-                             color: '#fff', border: 'none', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                           }}
-                         >
+                             color: '#fff', border: 'none', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                            {isDone ? '✓ Done' : 'Complete'}
                          </button>
                        </div>
                      </div>
 
                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', marginTop: '1.5rem' }}>
-                       {/* Tutorial Section */}
                        <div>
                          <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                            <span style={{ fontSize: '1.3rem' }}>📺</span> Tutorial Videos
@@ -421,65 +384,69 @@ export default function LearnTab() {
                                <div className="ai-ring"></div>
                              </div>
                              <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Finding high-quality tutorials...</span>
+                             <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial')} target="_blank" rel="noopener noreferrer"
+                               style={{ marginTop: '1rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                               ▶️ Or watch on YouTube directly
+                             </a>
                            </div>
-                         ) : videos ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
-                              {videos.filter(vid => !vid.isFallback).length > 0 ? (
-                                videos.filter(vid => !vid.isFallback).slice(0, 2).map((vid, vIdx) => (
-                                  <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                                    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
-                                      {vid.embedUrl ? (
-                                        <iframe 
-                                          src={vid.embedUrl} 
-                                          title={vid.title}
-                                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                          referrerPolicy="strict-origin-when-cross-origin"
-                                          allowFullScreen
-                                        />
-                                      ) : (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                          Video unavailable
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div style={{ padding: '1rem' }}>
-                                      <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
-                                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>{vid.channelName}</span>
-                                        <span>👁️ {vid.views}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
-                                  <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
-                                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Video Embeds Unavailable</div>
-                                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>Click below to watch tutorials on YouTube directly</p>
-                                  <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title)} target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-secondary" style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube</a>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                           <button onClick={() => loadVideoForStep(item)} className="glass-panel" style={{ width: '100%', padding: '3rem 2rem', borderRadius: 16, cursor: 'pointer', borderStyle: 'dashed', background: 'var(--primary-blue-light)', color: 'var(--primary-blue)', textAlign: 'center', transition: 'all 0.2s' }}>
-                             <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎬</div>
-                             <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>Load Video Tutorials</div>
-                             <div style={{ fontSize: '0.85rem', opacity: 0.7, marginTop: 4 }}>Curated {language} lessons for this topic</div>
-                           </button>
+                         ) : validVideos.length > 0 ? (
+                           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                             {validVideos.slice(0, 2).map((vid, vIdx) => (
+                               <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                                 <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
+                                   {vid.embedUrl ? (
+                                     <iframe 
+                                       src={vid.embedUrl} 
+                                       title={vid.title}
+                                       loading="lazy"
+                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                       referrerPolicy="strict-origin-when-cross-origin"
+                                       allowFullScreen
+                                     />
+                                   ) : (
+                                     <a href={vid.watchUrl} target="_blank" rel="noopener noreferrer"
+                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `url(${vid.thumbnail}) center/cover`, textDecoration: 'none' }}>
+                                       <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#fff' }}>▶</div>
+                                     </a>
+                                   )}
+                                 </div>
+                                 <div style={{ padding: '1rem' }}>
+                                   <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
+                                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                                     <span>{vid.channelName}</span>
+                                     {vid.views && <span>👁️ {vid.views}</span>}
+                                   </div>
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                         ) : (
+                           <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
+                             <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📺</div>
+                             <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Watch Tutorials on YouTube</div>
+                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>Explore curated {language} video lessons for this topic</p>
+                             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                               <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial ' + (language !== 'English' ? 'in ' + language : ''))}
+                                 target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-primary"
+                                 style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600, color: '#fff' }}>
+                                 ▶️ Watch on YouTube
+                               </a>
+                               <button onClick={() => loadVideoForStep(item)} className="btn-ce btn-ce-secondary"
+                                 style={{ padding: '0.75rem 1.5rem', borderRadius: 12, fontWeight: 600 }}>
+                                 🔄 Retry Embed
+                               </button>
+                             </div>
+                           </div>
                          )}
                        </div>
 
-                       {/* Project Resources (Only for Projects Category) */}
                        {item.category === 'Projects' && (
                          <div style={{ gridColumn: '1 / -1', marginTop: '1rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
                            <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🚀 Project Assets & Inspiration</h4>
                            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                             <img 
-                               src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} 
-                               alt="Project cover" 
-                               style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} 
-                             />
+                             <img src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} alt="Project cover" 
+                               style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
                              <div style={{ flex: 1, minWidth: 250 }}>
                                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
                                  Ready to build? Use these platforms to find reference code, architectural patterns, and design inspiration for <strong>{item.title}</strong>.
@@ -494,7 +461,6 @@ export default function LearnTab() {
                          </div>
                        )}
 
-                       {/* Notes Section */}
                        <NotePad 
                          initialValue={notes} 
                          onSave={(val) => handleNoteChange(cacheKey, val)} 
@@ -515,7 +481,6 @@ export default function LearnTab() {
         )
       )}
 
-      {/* ═══════════════ SKILL GAP ═══════════════ */}
       {section === 'skills' && (
         <div className="glass-panel" style={{ borderRadius: 24, padding: '3rem' }}>
           {!skillGap ? (
@@ -523,7 +488,7 @@ export default function LearnTab() {
               <div style={{ fontSize: '4rem', marginBottom: '1.25rem' }}>📊</div>
               <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '1rem' }}>Industry Skill Match</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: 500, margin: '0 auto 2rem', lineHeight: '1.6' }}>
-                We'll analyze your current profile against real-world industry requirements for <strong>{profile?.career_goal || 'your goal'}</strong> and highlight critical gaps.
+                {"We'll analyze your current profile against real-world industry requirements for "}<strong>{profile?.career_goal || 'your goal'}</strong>{" and highlight critical gaps."}
               </p>
               <button className="btn-ce btn-ce-primary btn-ce-large" onClick={handleAnalyze} disabled={analyzingGap} style={{ borderRadius: 14 }}>
                 {analyzingGap ? '🔍 AI Analyzing Market Data...' : 'Start Full Gap Analysis'}
@@ -568,7 +533,6 @@ export default function LearnTab() {
         </div>
       )}
 
-      {/* ═══════════════ BOOKMARKS ═══════════════ */}
       {section === 'bookmarks' && (
         <div className="glass-card" style={{ borderRadius: 16, padding: '1.5rem' }}>
           <div style={{ fontWeight: 700, marginBottom: '0.75rem' }}>🔖 Saved Resources</div>

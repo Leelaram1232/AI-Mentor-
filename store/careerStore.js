@@ -123,12 +123,16 @@ const useCareerStore = create(
                 };
             },
 
-            // Persist to Supabase
-            saveProfileToSupabase: async () => {
+            // Persist to Supabase — accepts optional userId to skip getCurrentUser() roundtrip
+            saveProfileToSupabase: async (userId) => {
                 const { userData } = get();
                 try {
-                    const user = await getCurrentUser();
-                    if (!user) throw new Error('No user found');
+                    let uid = userId;
+                    if (!uid) {
+                        const user = await getCurrentUser();
+                        if (!user) throw new Error('No user found');
+                        uid = user.id;
+                    }
 
                     const mapped = careerUserDataToProfileUpdates(userData);
                     const updates = { ...mapped };
@@ -137,7 +141,7 @@ const useCareerStore = create(
                     }
 
                     console.log('[CareerStore] Saving profile updates to Supabase:', updates);
-                    await updateProfile(user.id, updates);
+                    await updateProfile(uid, updates);
                     return { success: true };
                 } catch (error) {
                     console.error('Error saving profile:', error);
