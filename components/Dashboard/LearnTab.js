@@ -83,7 +83,6 @@ export default function LearnTab() {
   const [videoCache, setVideoCache] = useState({});
   const [loadingVideo, setLoadingVideo] = useState(null);
   const [userNotes, setUserNotes] = useState({});
-  const [showExam, setShowExam] = useState({});
   const notesRef = useRef({});
 
   useEffect(() => { 
@@ -358,12 +357,9 @@ export default function LearnTab() {
                           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: 700 }}>{item.description}</p>
                        </div>
                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                         <button className="btn-ce btn-ce-secondary" onClick={() => setShowExam(prev => ({ ...prev, [cacheKey]: !prev[cacheKey] }))}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12,
-                             background: showExam[cacheKey] ? 'var(--primary-blue)' : undefined,
-                             color: showExam[cacheKey] ? '#fff' : undefined,
-                             border: showExam[cacheKey] ? 'none' : undefined }}>
-                           📝 {showExam[cacheKey] ? 'Hide Exam' : 'Take Test'}
+                         <button className="btn-ce btn-ce-secondary" onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
+                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
+                           📝 Full Exam
                          </button>
                          <button className="btn-ce btn-ce-secondary" onClick={() => learnWithMentor(item)}
                            style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
@@ -379,46 +375,40 @@ export default function LearnTab() {
                      </div>
 
                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', marginTop: '1.5rem' }}>
+                       {/* Tutorial Videos */}
                        <div>
                          <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                            <span style={{ fontSize: '1.3rem' }}>📺</span> Tutorial Videos
                          </h4>
                          {loadingVideo === cacheKey ? (
-                           <div className="glass-panel" style={{ height: 280, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
-                             <div className="ai-loader" style={{ width: 45, height: 45, marginBottom: '1.25rem' }}>
+                           <div className="glass-panel" style={{ height: 220, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
+                             <div className="ai-loader" style={{ width: 40, height: 40, marginBottom: '1rem' }}>
                                <div className="ai-ring"></div>
                              </div>
-                             <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Finding high-quality tutorials...</span>
+                             <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Loading tutorials...</span>
                              <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial')} target="_blank" rel="noopener noreferrer"
-                               style={{ marginTop: '1rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                               ▶️ Or watch on YouTube directly
-                             </a>
+                               style={{ marginTop: '0.75rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube now</a>
                            </div>
                          ) : validVideos.length > 0 ? (
-                           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                           <div style={{ display: 'grid', gap: '1.25rem' }}>
                              {validVideos.slice(0, 2).map((vid, vIdx) => (
                                <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
                                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
                                    {vid.embedUrl ? (
-                                     <iframe 
-                                       src={vid.embedUrl} 
-                                       title={vid.title}
-                                       loading="lazy"
+                                     <iframe src={vid.embedUrl} title={vid.title} loading="lazy"
                                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                       referrerPolicy="strict-origin-when-cross-origin"
-                                       allowFullScreen
-                                     />
+                                       referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
                                    ) : (
                                      <a href={vid.watchUrl} target="_blank" rel="noopener noreferrer"
-                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `url(${vid.thumbnail}) center/cover`, textDecoration: 'none' }}>
+                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: vid.thumbnail ? `url(${vid.thumbnail}) center/cover` : 'linear-gradient(135deg, #ff0000, #cc0000)', textDecoration: 'none' }}>
                                        <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#fff' }}>▶</div>
                                      </a>
                                    )}
                                  </div>
-                                 <div style={{ padding: '1rem' }}>
-                                   <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
-                                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+                                 <div style={{ padding: '0.85rem' }}>
+                                   <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
+                                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
                                      <span>{vid.channelName}</span>
                                      {vid.views && <span>👁️ {vid.views}</span>}
                                    </div>
@@ -427,23 +417,28 @@ export default function LearnTab() {
                              ))}
                            </div>
                          ) : (
-                           <div className="glass-panel" style={{ padding: '2rem', borderRadius: 16, textAlign: 'center' }}>
-                             <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📺</div>
-                             <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>Watch Tutorials on YouTube</div>
-                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>Explore curated {language} video lessons for this topic</p>
-                             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                               <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial ' + (language !== 'English' ? 'in ' + language : ''))}
-                                 target="_blank" rel="noopener noreferrer" className="btn-ce btn-ce-primary"
-                                 style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem', borderRadius: 12, textDecoration: 'none', fontWeight: 600, color: '#fff' }}>
-                                 ▶️ Watch on YouTube
-                               </a>
-                               <button onClick={() => loadVideoForStep(item)} className="btn-ce btn-ce-secondary"
-                                 style={{ padding: '0.75rem 1.5rem', borderRadius: 12, fontWeight: 600 }}>
-                                 🔄 Retry Embed
-                               </button>
+                           <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial ' + (language !== 'English' ? 'in ' + language : ''))}
+                             target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
+                             <div className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer' }}>
+                               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: 'linear-gradient(135deg, #ff0000, #cc0000)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', backdropFilter: 'blur(10px)' }}>▶️</div>
+                                 <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>Watch on YouTube</span>
+                               </div>
+                               <div style={{ padding: '1rem', textAlign: 'center' }}>
+                                 <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, color: 'var(--text-primary)' }}>{item.title} — Tutorial</div>
+                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Click to search on YouTube{language !== 'English' ? ` in ${language}` : ''}</div>
+                               </div>
                              </div>
-                           </div>
+                           </a>
                          )}
+                       </div>
+
+                       {/* Inline Exam — Always visible */}
+                       <div>
+                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                           <span style={{ fontSize: '1.3rem' }}>📝</span> Topic Exam
+                         </h4>
+                         <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => { refreshProfile(); }} />
                        </div>
 
                        {item.category === 'Projects' && (
@@ -454,25 +449,14 @@ export default function LearnTab() {
                                style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
                              <div style={{ flex: 1, minWidth: 250 }}>
                                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                                 Ready to build? Use these platforms to find reference code, architectural patterns, and design inspiration for <strong>{item.title}</strong>.
+                                 Ready to build? Find reference code and design inspiration for <strong>{item.title}</strong>.
                                </p>
                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                 <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub Repos</a>
+                                 <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub</a>
                                  <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>💻 CodePen</a>
-                                 <a href={`https://dribbble.com/search/${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#ea4c89', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🎨 Dribbble</a>
                                </div>
                              </div>
                            </div>
-                         </div>
-                       )}
-
-                       {/* Inline Exam Section */}
-                       {showExam[cacheKey] && (
-                         <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                           <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📝 Topic Exam</h4>
-                           <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => {
-                             refreshProfile();
-                           }} />
                          </div>
                        )}
 
