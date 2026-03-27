@@ -154,6 +154,19 @@ export async function toggleRoadmapItem(itemId, completed) {
   return data;
 }
 
+export async function updateRoadmapItemScore(itemId, score) {
+  const { data, error } = await supabase
+    .from('roadmap_items')
+    .update({ score })
+    .eq('id', itemId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+
+
 // ─── Bookmarks ───────────────────────────────────────────────────────────────
 
 export async function getBookmarks(userId) {

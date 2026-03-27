@@ -59,6 +59,7 @@ create table if not exists public.roadmap_items (
   resource_type text default '',
   estimated_hours numeric default 0,
   is_completed boolean default false,
+  score integer default 0,
   completed_at timestamptz,
   created_at timestamptz default now()
 );

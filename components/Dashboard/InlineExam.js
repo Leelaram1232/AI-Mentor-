@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import { generateExam, analyzeExamPerformance } from '@/utils/groqApi';
 import { addXP, logLearningActivity, awardBadge } from '@/utils/authClient';
 
-export default function InlineExam({ topic, userId, language = 'English', onComplete }) {
+export default function InlineExam({ topic, userId, language = 'English', onComplete, passedScore = 0, isCompleted = false }) {
+
   const [state, setState] = useState('idle'); // idle, loading, taking, results
   const [questions, setQuestions] = useState([]);
   const [qIdx, setQIdx] = useState(0);
@@ -178,12 +179,19 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
           </div>
           <span className="meta-badge" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 700, fontSize: '0.75rem' }}>⚡ Required</span>
         </div>
-        <button onClick={startExam} className="btn-ce btn-ce-primary"
-          style={{ width: '100%', padding: '0.85rem', borderRadius: 12, fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          📝 Take Test
-        </button>
+        {isCompleted ? (
+          <div style={{ textAlign: 'center', padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: 12, border: '1px dashed var(--success-green)', color: 'var(--success-green)', fontWeight: 700 }}>
+            ✅ Assessment Passed ({passedScore}%) — Read-only
+          </div>
+        ) : (
+          <button onClick={startExam} className="btn-ce btn-ce-primary"
+            style={{ width: '100%', padding: '0.85rem', borderRadius: 12, fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            📝 Take Test
+          </button>
+        )}
       </div>
     );
+
   }
 
   if (state === 'loading') {

@@ -2,15 +2,16 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/Auth/AuthProvider';
-import { getUserRoadmap, saveRoadmap, toggleRoadmapItem, getBookmarks, removeBookmark, logLearningActivity, addXP, awardBadge } from '@/utils/authClient';
+import { getUserRoadmap, saveRoadmap, toggleRoadmapItem, updateRoadmapItemScore, getBookmarks, removeBookmark, logLearningActivity, addXP, awardBadge } from '@/utils/authClient';
 import { generateLearningRoadmap, analyzeSkillGap } from '@/utils/groqApi';
 import { searchYouTubeVideos, buildYouTubeSearchQuery, getYouTubeSearchURL } from '@/utils/youtubeApi';
 import useDashboardStore from '@/store/dashboardStore';
 import { jsPDF } from 'jspdf';
 import InlineExam from './InlineExam';
 
+
 // --- Subcomponents for Performance ---
-function NotePad({ initialValue, onSave, onDownload, itemTitle }) {
+function NotePad({ initialValue, onSave, onDownload, itemTitle, readonly = false }) {
   const [localNotes, setLocalNotes] = useState(initialValue);
   const timerRef = useRef(null);
 
@@ -19,6 +20,7 @@ function NotePad({ initialValue, onSave, onDownload, itemTitle }) {
   }, [initialValue]);
 
   const handleChange = (val) => {
+    if (readonly) return; // Prevent changing if readonly
     setLocalNotes(val);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
@@ -30,7 +32,7 @@ function NotePad({ initialValue, onSave, onDownload, itemTitle }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h4 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          📝 Note Pad
+          📝 Note Pad {readonly && <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>(Read Only)</span>}
         </h4>
         <button onClick={onDownload} style={{ 
           background: 'none', border: 'none', color: 'var(--primary-blue)', 
@@ -42,20 +44,24 @@ function NotePad({ initialValue, onSave, onDownload, itemTitle }) {
       <textarea 
         value={localNotes}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="Type your study notes here... (Auto-saves)"
+        readOnly={readonly}
+        placeholder={readonly ? "Notes are read-only for completed days." : "Type your study notes here... (Auto-saves)"}
         spellCheck="false"
         data-gramm="false"
         style={{
           width: '100%', minHeight: 400, padding: '1.25rem', borderRadius: 16,
-          border: '1px solid var(--border-color)', background: 'var(--input-bg)',
+          border: '1px solid var(--border-color)', background: readonly ? 'var(--glass-bg)' : 'var(--input-bg)',
           color: 'var(--text-primary)', fontSize: '1rem', fontFamily: 'inherit',
           resize: 'vertical', outline: 'none', lineHeight: '1.6',
-          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+          opacity: readonly ? 0.7 : 1,
+          cursor: readonly ? 'not-allowed' : 'text'
         }}
       />
     </div>
   );
 }
+
 
 // Category colors
 const CAT_COLORS = {
@@ -143,9 +149,18 @@ export default function LearnTab() {
     setGenerating(false);
   };
 
-  const handleToggleStep = async (item) => {
+  const handleExamComplete = async (itemId, score, total) => {
     try {
-      const done = !item.is_completed;
+      const pct = Math.round((score / total) * 100);
+      await updateRoadmapItemScore(itemId, pct);
+      await loadData(false);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleToggleStep = async (item) => {
+    if (item.is_completed) return; // Lock the "Done" state
+    try {
+      const done = true;
       await toggleRoadmapItem(item.id, done);
       if (done) {
         await addXP(user.id, 15);
@@ -154,11 +169,21 @@ export default function LearnTab() {
         if (count === 3) await awardBadge(user.id, { badge_name: 'Getting Started', badge_icon: '🌟', badge_description: '3 steps done' });
         if (count === 6) await awardBadge(user.id, { badge_name: 'Halfway There', badge_icon: '🚀', badge_description: '6 steps done' });
         if (count >= 10) await awardBadge(user.id, { badge_name: 'Dedicated Learner', badge_icon: '🏆', badge_description: '10+ steps done' });
+        
+        // Auto-advance if day is fully finished
+        const dayNum = item.day_number || item.step_number;
+        const dayItems = (roadmap?.roadmap_items || []).filter(i => (i.day_number || i.step_number) === dayNum);
+        const allDoneNow = dayItems.every(i => i.id === item.id ? true : i.is_completed);
+        if (allDoneNow) {
+          setExpandedDay(dayNum + 1);
+        }
+        
         await refreshProfile();
       }
       await loadData(false);
     } catch (e) { console.error(e); }
   };
+
 
   const handleAnalyze = async () => {
     setAnalyzingGap(true);
@@ -356,22 +381,33 @@ export default function LearnTab() {
                           <h3 style={{ fontWeight: 800, fontSize: '1.6rem', margin: '0 0 0.75rem 0', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{item.title}</h3>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.6', maxWidth: 700 }}>{item.description}</p>
                        </div>
-                       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                         <button className="btn-ce btn-ce-secondary" onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
-                           📝 Full Exam
-                         </button>
-                         <button className="btn-ce btn-ce-secondary" onClick={() => learnWithMentor(item)}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
-                           🤖 AI Mentor
-                         </button>
-                         <button className="btn-ce" onClick={() => handleToggleStep(item)}
-                           style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 700, borderRadius: 12,
-                             background: isDone ? 'var(--success-green)' : 'var(--primary-blue)',
-                             color: '#fff', border: 'none', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-                           {isDone ? '✓ Done' : 'Complete'}
-                         </button>
-                       </div>
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                          <button className="btn-ce btn-ce-secondary" onClick={() => { setExamTopic(item.title); setActiveTab('exams'); }}
+                            style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
+                            📝 Full Exam
+                          </button>
+                          <button className="btn-ce btn-ce-secondary" onClick={() => learnWithMentor(item)}
+                            style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 600, borderRadius: 12 }}>
+                            🤖 AI Mentor
+                          </button>
+                          
+                          {/* Complete button only shows AFTER passing 60% and IF not already done */}
+                          {!isDone && (item.score >= 60) && (
+                            <button className="btn-ce" onClick={() => handleToggleStep(item)}
+                              style={{ padding: '0.75rem 1.25rem', fontSize: '0.9rem', fontWeight: 700, borderRadius: 12,
+                                background: 'var(--primary-blue)',
+                                color: '#fff', border: 'none', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                              Complete Day Plan
+                            </button>
+                          )}
+
+                          {isDone && (
+                            <span style={{ color: 'var(--success-green)', fontWeight: 800, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem 1rem', borderRadius: 10 }}>
+                              ✅ COMPLETED
+                            </span>
+                          )}
+                        </div>
+
                      </div>
 
                      <div style={{ marginTop: '1.5rem', display: 'grid', gap: '2rem' }}>
@@ -410,6 +446,7 @@ export default function LearnTab() {
                                onSave={(val) => handleNoteChange(cacheKey, val)} 
                                onDownload={() => downloadNotesAsPDF(item)}
                                itemTitle={`${item.title} - Video ${vIdx + 1}`}
+                               readonly={isDone}
                              />
                            </div>
                          ))
@@ -431,6 +468,7 @@ export default function LearnTab() {
                              onSave={(val) => handleNoteChange(cacheKey, val)} 
                              onDownload={() => downloadNotesAsPDF(item)}
                              itemTitle={item.title}
+                             readonly={isDone}
                            />
                          </div>
                        )}
@@ -441,7 +479,14 @@ export default function LearnTab() {
                        <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '1.5rem', textAlign: 'center', color: 'var(--primary-blue)' }}>
                          🎯 Topic Assessment Test
                        </h4>
-                        <InlineExam topic={item.title} userId={user.id} language={language} onComplete={(s, t) => { refreshProfile(); }} />
+                        <InlineExam 
+                          topic={item.title} 
+                          userId={user.id} 
+                          language={language} 
+                          passedScore={item.score}
+                          isCompleted={isDone}
+                          onComplete={(s, t) => { handleExamComplete(item.id, s, t); refreshProfile(); }} 
+                        />
                      </div>
 
                      {item.category === 'Projects' && (
