@@ -11,6 +11,9 @@ export default function InlineExam({ topic, userId, onComplete }) {
   const [score, setScore] = useState(0);
   const [mentorFeedback, setMentorFeedback] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [pos, setPos] = useState({ x: 20, y: 100 }); // Floating pos
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const startExam = async () => {
     setState('loading');
@@ -44,6 +47,12 @@ export default function InlineExam({ topic, userId, onComplete }) {
     setAnalyzing(true);
 
     try {
+      // Set to right side by default
+      if (typeof window !== 'undefined') {
+        const x = Math.max(20, window.innerWidth - 550);
+        setPos({ x, y: 100 });
+      }
+
       // Get AI Mentor's deep analysis
       const feedback = await analyzeExamPerformance(topic, s, questions.length, resultDetails);
       setMentorFeedback(feedback || 'Great job completing the exam! Focus on the concepts where you made mistakes to improve further.');
@@ -63,6 +72,24 @@ export default function InlineExam({ topic, userId, onComplete }) {
       setAnalyzing(false);
     }
   };
+
+  const onDragStart = (e) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - pos.x,
+      y: e.clientY - pos.y
+    });
+  };
+
+  const onDrag = (e) => {
+    if (!isDragging) return;
+    setPos({
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y
+    });
+  };
+
+  const onDragEnd = () => setIsDragging(false);
 
   if (state === 'idle') {
     return (
@@ -168,47 +195,52 @@ export default function InlineExam({ topic, userId, onComplete }) {
     const passed = pct >= 60;
 
     return (
-      <div className="fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
+      <div className="fade-in-up" 
+        onMouseMove={onDrag} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
+        style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
         
-        {/* Immersive AI Mentor Overlay (Transparent Chat Box + Blur) */}
+        {/* Floating AI Mentor Window (Movable Chat Box) */}
         {mentorFeedback && !analyzing && (
-          <div style={{ 
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)', 
-            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-            padding: '2rem'
+          <div className="pop-in" style={{ 
+            position: 'fixed', left: pos.x, top: pos.y, 
+            width: '100%', maxWidth: '440px', zIndex: 9999,
           }}>
-            <div className="glass-panel fade-in-right" style={{ 
-              width: '100%', maxWidth: '500px', maxHeight: '85vh', 
-              borderRadius: 32, padding: '2.5rem', border: '1px solid rgba(255,255,255,0.2)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column'
+            <div className="glass-panel" style={{ 
+              borderRadius: 24, border: '1px solid rgba(255,255,255,0.3)',
+              boxShadow: '0 30px 60px -12px rgba(0,0,0,0.3)', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(45deg, var(--primary-blue), #9333ea)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>🧠</div>
-                <div>
-                  <h4 style={{ fontWeight: 800, margin: 0, color: 'var(--primary-blue)', fontSize: '1.2rem' }}>AI Career Mentor</h4>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Analysis by Leela Ram Samavedam (2026)</div>
+              {/* Draggable Header */}
+              <div onMouseDown={onDragStart} className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+                style={{ background: 'var(--primary-blue)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🧠</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>AI Career Mentor</span>
+                </div>
+                <button onClick={() => setMentorFeedback('')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              </div>
+
+              <div style={{ padding: '1.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
+                <div style={{ marginBottom: '1.25rem', padding: '1rem', borderRadius: 16, background: passed ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}` }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.2rem', color: passed ? 'var(--success-green)' : 'var(--error-red)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Result: {pct}%</span>
+                    <span>{passed ? '✅' : '❌'}</span>
+                  </div>
+                </div>
+                <div style={{ 
+                  fontSize: '0.95rem', lineHeight: '1.6', color: '#1a1a1a', whiteSpace: 'pre-wrap',
+                  fontFamily: 'Inter, sans-serif'
+                }}>
+                  {mentorFeedback}
                 </div>
               </div>
 
-              <div style={{ 
-                flex: 1, overflowY: 'auto', paddingRight: '1rem', fontSize: '1rem', 
-                lineHeight: '1.7', color: 'white', whiteSpace: 'pre-wrap' 
-              }}>
-                <div style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: 16, background: passed ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}` }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.4rem', color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}% - {passed ? 'Passed!' : 'Try Again'}</div>
-                  <div style={{ fontSize: '0.85rem' }}>{score}/{questions.length} correct concepts mastered</div>
-                </div>
-                {mentorFeedback}
+              <div style={{ padding: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Hold & drag Blue Header to move</div>
+                <button className="btn-ce btn-ce-secondary" onClick={() => setMentorFeedback('')} style={{ padding: '0.5rem 1.5rem', width: '100%', borderRadius: 12 }}>
+                  Close & Review Answers
+                </button>
               </div>
-
-              <button className="btn-ce btn-ce-primary" onClick={() => setMentorFeedback('')} style={{ 
-                marginTop: '1.5rem', width: '100%', padding: '1rem', borderRadius: 16, 
-                fontWeight: 800, fontSize: '1rem', boxShadow: '0 10px 20px -5px rgba(59,130,246,0.3)' 
-              }}>
-                🚀 Got it, Mentor! Review Detailed Answers
-              </button>
             </div>
           </div>
         )}
@@ -222,8 +254,10 @@ export default function InlineExam({ topic, userId, onComplete }) {
         )}
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Question Review</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Review each question to master the topic</p>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
+            Exam Results: {pct}%
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Detailed concept breakdown</p>
         </div>
 
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
@@ -231,14 +265,14 @@ export default function InlineExam({ topic, userId, onComplete }) {
             const correct = answers[i] === q.correctIndex;
             return (
               <div key={i} className="glass-panel" style={{ padding: '1rem', borderRadius: 12, border: `1px solid ${correct ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '1.1rem' }}>{correct ? '✅' : '❌'}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 6 }}>{q.question}</div>
                     <div style={{ fontSize: '0.85rem' }}>
                        {!correct && <div style={{ color: 'var(--error-red)', fontWeight: 600, marginBottom: 4 }}>Your answer: {q.options[answers[i]]}</div>}
                        <div style={{ color: 'var(--success-green)', fontWeight: 700 }}>Correct: {q.options[q.correctIndex]}</div>
-                       <div style={{ marginTop: 8, padding: '0.75rem', borderRadius: 8, background: 'rgba(0,0,0,0.2)', color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem' }}>💡 {q.explanation}</div>
+                       <div style={{ marginTop: 8, padding: '0.75rem', borderRadius: 8, background: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)', fontSize: '0.8rem' }}>💡 {q.explanation}</div>
                     </div>
                   </div>
                 </div>
