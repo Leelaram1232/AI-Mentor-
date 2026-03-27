@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { generateExam, analyzeExamPerformance } from '@/utils/groqApi';
 import { addXP, logLearningActivity, awardBadge } from '@/utils/authClient';
 
@@ -11,9 +11,10 @@ export default function InlineExam({ topic, userId, onComplete }) {
   const [score, setScore] = useState(0);
   const [mentorFeedback, setMentorFeedback] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
-  const [pos, setPos] = useState({ x: 20, y: 100 }); // Floating pos
+  const [pos, setPos] = useState({ x: 20, y: 150 }); 
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const startExam = async () => {
     setState('loading');
@@ -47,16 +48,21 @@ export default function InlineExam({ topic, userId, onComplete }) {
     setAnalyzing(true);
 
     try {
-      // Set to right side by default
+      // Set to floating pos
       if (typeof window !== 'undefined') {
-        const x = Math.max(20, window.innerWidth - 550);
-        setPos({ x, y: 100 });
+        const x = Math.max(20, window.innerWidth - 480);
+        setPos({ x, y: 150 });
       }
 
       // Get AI Mentor's deep analysis
       const feedback = await analyzeExamPerformance(topic, s, questions.length, resultDetails);
       setMentorFeedback(feedback || 'Great job completing the exam! Focus on the concepts where you made mistakes to improve further.');
       setAnalyzing(false);
+
+      // Auto-speak feedback
+      if (feedback) {
+        speakFeedback(feedback);
+      }
 
       const xp = s * 10;
       if (xp > 0) {
@@ -73,23 +79,57 @@ export default function InlineExam({ topic, userId, onComplete }) {
     }
   };
 
+  const speakFeedback = (text) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop current
+      const utterance = new SpeechSynthesisUtterance(text.substring(0, 500)); // Limit length for speed
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.1; // Teacher-like pitch
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if (typeof window !== 'undefined') window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
+
+  // Robust Dragging Logic
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      setPos({
+        x: e.clientX - dragStartPos.current.x,
+        y: e.clientY - dragStartPos.current.y
+      });
+    };
+
+    const handleMouseUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    } else {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   const onDragStart = (e) => {
+    e.preventDefault();
     setIsDragging(true);
-    setDragOffset({
+    dragStartPos.current = {
       x: e.clientX - pos.x,
       y: e.clientY - pos.y
-    });
+    };
   };
-
-  const onDrag = (e) => {
-    if (!isDragging) return;
-    setPos({
-      x: e.clientX - dragOffset.x,
-      y: e.clientY - dragOffset.y
-    });
-  };
-
-  const onDragEnd = () => setIsDragging(false);
 
   if (state === 'idle') {
     return (
@@ -196,50 +236,56 @@ export default function InlineExam({ topic, userId, onComplete }) {
 
     return (
       <div className="fade-in-up" 
-        onMouseMove={onDrag} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
         style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
         
-        {/* Floating AI Mentor Window (Movable Chat Box) */}
+        {/* DRAGGABLE AI MENTOR WINDOW TAB */}
         {mentorFeedback && !analyzing && (
           <div className="pop-in" style={{ 
             position: 'fixed', left: pos.x, top: pos.y, 
-            width: '100%', maxWidth: '440px', zIndex: 9999,
+            width: '100%', maxWidth: '400px', zIndex: 10000,
           }}>
             <div className="glass-panel" style={{ 
-              borderRadius: 24, border: '1px solid rgba(255,255,255,0.3)',
-              boxShadow: '0 30px 60px -12px rgba(0,0,0,0.3)', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)'
+              borderRadius: 16, border: '1px solid rgba(255,255,255,0.4)',
+              boxShadow: '0 40px 80px -20px rgba(0,0,0,0.4)', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(32px)'
             }}>
-              {/* Draggable Header */}
+              {/* Window Title Bar (Tab) */}
               <div onMouseDown={onDragStart} className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
-                style={{ background: 'var(--primary-blue)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🧠</span>
-                  <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>AI Career Mentor</span>
+                style={{ 
+                  background: 'linear-gradient(90deg, #1e293b, #334155)', 
+                  padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', 
+                  justifyContent: 'space-between', color: '#fff', userSelect: 'none'
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <div style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>AI MENTOR</div>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Personalized Insight</span>
                 </div>
-                <button onClick={() => setMentorFeedback('')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => speakFeedback(mentorFeedback)} disabled={isSpeaking} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem' }}>{isSpeaking ? '🔊' : '▶️'}</button>
+                  <button onClick={() => { stopSpeaking(); setMentorFeedback(''); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>
+                </div>
               </div>
 
-              <div style={{ padding: '1.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
-                <div style={{ marginBottom: '1.25rem', padding: '1rem', borderRadius: 16, background: passed ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}` }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.2rem', color: passed ? 'var(--success-green)' : 'var(--error-red)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>Result: {pct}%</span>
-                    <span>{passed ? '✅' : '❌'}</span>
+              <div style={{ padding: '1.5rem', maxHeight: '55vh', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#fff' }}>👩‍🏫</div>
+                  <div>
+                    <h4 style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>Mentor Analysis</h4>
+                    <div style={{ fontSize: '0.7rem', color: isSpeaking ? 'var(--success-green)' : 'var(--text-secondary)', fontWeight: 600 }}>{isSpeaking ? 'Currently Speaking...' : 'By Leela Ram Samavedam (2026)'}</div>
                   </div>
                 </div>
+
                 <div style={{ 
-                  fontSize: '0.95rem', lineHeight: '1.6', color: '#1a1a1a', whiteSpace: 'pre-wrap',
-                  fontFamily: 'Inter, sans-serif'
+                  fontSize: '0.9rem', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap',
+                  padding: '1rem', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0'
                 }}>
                   {mentorFeedback}
                 </div>
               </div>
 
-              <div style={{ padding: '1rem', borderTop: '1px solid rgba(0,0,0,0.05)', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Hold & drag Blue Header to move</div>
-                <button className="btn-ce btn-ce-secondary" onClick={() => setMentorFeedback('')} style={{ padding: '0.5rem 1.5rem', width: '100%', borderRadius: 12 }}>
-                  Close & Review Answers
-                </button>
+              <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Drag header to move window</span>
+                <button className="btn-ce" onClick={() => { stopSpeaking(); setMentorFeedback(''); }} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderRadius: 8, background: '#f1f5f9' }}>Close Window</button>
               </div>
             </div>
           </div>
@@ -254,25 +300,25 @@ export default function InlineExam({ topic, userId, onComplete }) {
         )}
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
-            Exam Results: {pct}%
+          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
+            Exam Result: {pct}%
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Detailed concept breakdown</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Detailed concept mastery check</p>
         </div>
 
-        <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '2rem' }}>
           {questions.map((q, i) => {
             const correct = answers[i] === q.correctIndex;
             return (
-              <div key={i} className="glass-panel" style={{ padding: '1rem', borderRadius: 12, border: `1px solid ${correct ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: '1.1rem' }}>{correct ? '✅' : '❌'}</span>
+              <div key={i} className="glass-panel" style={{ padding: '1rem', borderRadius: 12, border: `1px solid ${correct ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}` }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: '1.2rem' }}>{correct ? '✅' : '❌'}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 6 }}>{q.question}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 6, opacity: 0.9 }}>{q.question}</div>
                     <div style={{ fontSize: '0.85rem' }}>
-                       {!correct && <div style={{ color: 'var(--error-red)', fontWeight: 600, marginBottom: 4 }}>Your answer: {q.options[answers[i]]}</div>}
-                       <div style={{ color: 'var(--success-green)', fontWeight: 700 }}>Correct: {q.options[q.correctIndex]}</div>
-                       <div style={{ marginTop: 8, padding: '0.75rem', borderRadius: 8, background: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)', fontSize: '0.8rem' }}>💡 {q.explanation}</div>
+                       {!correct && <div style={{ color: 'var(--error-red)', fontWeight: 600, marginBottom: 4 }}>You said: {q.options[answers[i]]}</div>}
+                       <div style={{ color: 'var(--success-green)', fontWeight: 800 }}>Mentor's Pick: {q.options[q.correctIndex]}</div>
+                       <div style={{ marginTop: 8, padding: '0.75rem', borderRadius: 8, background: 'rgba(0,0,0,0.03)', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>💡 {q.explanation}</div>
                     </div>
                   </div>
                 </div>
@@ -282,8 +328,8 @@ export default function InlineExam({ topic, userId, onComplete }) {
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 10, fontWeight: 600 }}>🔄 Retake Exam</button>
-          <button className="btn-ce btn-ce-secondary" onClick={() => { setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 10, fontWeight: 600 }}>Back to Roadmap</button>
+          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 12, fontWeight: 700 }}>🔄 Retake Exam</button>
+          <button className="btn-ce btn-ce-secondary" onClick={() => { stopSpeaking(); setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 12, fontWeight: 700 }}>Finish Session</button>
         </div>
       </div>
     );
