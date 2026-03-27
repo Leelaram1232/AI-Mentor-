@@ -451,8 +451,43 @@ nextjs-portal,
 ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
 /* =============================================================================
-   RESPONSIVE
+   RESPONSIVE (Mobile Optimization)
    ============================================================================= */
+@media (max-width: 1024px) {
+  .onboarding-header { font-size: 2.75rem; }
+}
+
 @media (max-width: 768px) {
-  .tab-btn-ce { padding: 0.75rem 1rem; font-size: 0.85rem; white-space: nowrap; }
+  /* Layout Spacing */
+  .glass-panel { padding: 1.5rem !important; border-radius: 16px !important; }
+  .btn-ce-large { padding: 0.85rem 1.75rem; font-size: 1rem; }
+  
+  /* Typography */
+  .onboarding-header { font-size: 2rem; margin-bottom: 0.5rem; }
+  .onboarding-subtitle { font-size: 1rem; margin-bottom: 1.5rem; }
+  .gradient-text { font-size: 1.75rem; }
+  
+  /* Dashboard Specifics */
+  .tab-btn-ce { padding: 0.6rem 0.85rem; font-size: 0.8rem; }
+  .bottom-nav { height: 64px; }
+  .bottom-nav-item .nav-icon { font-size: 1.2rem; }
+  .bottom-nav-item .nav-label { font-size: 10px; }
+
+  /* Roadmap Grid */
+  .roadmap-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
+  
+  /* Utilities */
+  .mobile-hide { display: none !important; }
+  .mobile-padding { padding: 1rem !important; }
+  .mobile-full { width: 100% !important; }
+  
+  /* Padding fix for Bottom Nav */
+  main, .dashboard-container { padding-bottom: 80px !important; }
+}
+
+@media (max-width: 480px) {
+  .onboarding-header { font-size: 1.75rem; }
+  .btn-ce { width: 100%; padding: 0.75rem; font-size: 0.95rem; }
+  .glass-panel { padding: 1rem !important; }
+  .step-dot-ce { width: 10px; height: 10px; }
 }

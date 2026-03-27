@@ -382,7 +382,7 @@ export default function LearnTab() {
                          </div>
                        ) : validVideos.length > 0 ? (
                          validVideos.slice(0, 2).map((vid, vIdx) => (
-                           <div key={vid.videoId || vIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                           <div key={vid.videoId || vIdx} className="roadmap-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
                              {/* Video Card */}
                              <div className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
                                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>

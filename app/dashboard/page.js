@@ -140,37 +140,35 @@ export default function DashboardPage() {
         className="glass-panel"
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '1rem 2rem', borderRadius: 16,
-          margin: '1.5rem 1.5rem 1.5rem',
+          padding: '0.75rem 1.25rem', borderRadius: 16,
+          margin: '1rem',
           position: 'sticky', top: '0.75rem', zIndex: 50,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary-blue)' }}><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          <span className="gradient-text" style={{ fontSize: '1.3rem', fontWeight: 700 }}>
-            AI Career Explorer
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary-blue)', flexShrink: 0 }}><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <span className="gradient-text" style={{ fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+            AI Career <span className="mobile-hide">Explorer</span>
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.3rem 0.85rem', borderRadius: 999,
+            display: 'flex', alignItems: 'center', gap: '0.4rem',
+            padding: '0.3rem 0.75rem', borderRadius: 999,
             background: 'var(--primary-blue-light)', border: '1px solid var(--border-color)',
-            fontSize: '0.8rem', fontWeight: 600,
+            fontSize: '0.75rem', fontWeight: 700,
           }}>
             <span>⚡</span>
-            <span style={{ color: 'var(--primary-blue)' }}>{profile?.xp_points || 0} XP</span>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>Lv {profile?.level || 1}</span>
+            <span style={{ color: 'var(--primary-blue)' }}>{profile?.xp_points || 0} <span className="mobile-hide">XP</span></span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>Lv {profile?.level || 1}</span>
           </div>
           <div
             onClick={() => setActiveTab('profile')}
-            title="Profile Settings"
             style={{
-              width: 38, height: 38, borderRadius: '50%',
+              width: 36, height: 36, borderRadius: '50%',
               background: 'linear-gradient(135deg, var(--primary-blue), var(--blob-2))',
               color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-              transition: 'transform 0.2s ease',
+              fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', flexShrink: 0
             }}
           >
             {(profile?.full_name || user?.email || '?')[0].toUpperCase()}

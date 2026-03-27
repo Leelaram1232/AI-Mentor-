@@ -15,6 +15,7 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
   const [isDragging, setIsDragging] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const startExam = async () => {
     setState('loading');
@@ -110,10 +111,30 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
     setIsSpeaking(false);
   };
 
-  // Robust Dragging Logic
+  // Resolve Mobile vs Desktop
   useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setPos({ x: 0, y: 0 }); // Use CSS for mobile position
+      } else if (pos.x === 0 && pos.y === 0) {
+        setPos({ x: window.innerWidth - 450, y: 150 });
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Robust Dragging Logic + Mobile Detection
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
     const handleMouseMove = (e) => {
-      if (!isDragging) return;
+      if (!isDragging || isMobile) return;
       setPos({
         x: e.clientX - dragStartPos.current.x,
         y: e.clientY - dragStartPos.current.y
@@ -122,7 +143,7 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
 
     const handleMouseUp = () => setIsDragging(false);
 
-    if (isDragging) {
+    if (isDragging && !isMobile) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     } else {
@@ -131,12 +152,14 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
     }
 
     return () => {
+      window.removeEventListener('resize', checkMobile);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, isMobile]);
 
   const onDragStart = (e) => {
+    if (isMobile) return;
     e.preventDefault();
     setIsDragging(true);
     dragStartPos.current = {
@@ -255,32 +278,38 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
         {/* DRAGGABLE AI MENTOR WINDOW TAB */}
         {mentorFeedback && !analyzing && (
           <div className="pop-in" style={{ 
-            position: 'fixed', left: pos.x, top: pos.y, 
-            width: '100%', maxWidth: '400px', zIndex: 10000,
+            position: 'fixed', 
+            left: isMobile ? 0 : pos.x, 
+            top: isMobile ? 'auto' : pos.y, 
+            bottom: isMobile ? 0 : 'auto',
+            width: '100%', 
+            maxWidth: isMobile ? '100%' : '400px', 
+            zIndex: 10000,
+            padding: isMobile ? 0 : '1rem'
           }}>
             <div className="glass-panel" style={{ 
-              borderRadius: 16, border: '1px solid rgba(255,255,255,0.4)',
-              boxShadow: '0 40px 80px -20px rgba(0,0,0,0.4)', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(32px)'
+              borderRadius: isMobile ? '24px 24px 0 0' : 16, border: '1px solid rgba(255,255,255,0.4)',
+              boxShadow: '0 -20px 80px -20px rgba(0,0,0,0.4)', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(32px)'
             }}>
               {/* Window Title Bar (Tab) */}
-              <div onMouseDown={onDragStart} className={isDragging ? 'cursor-grabbing' : 'cursor-grab'}
+              <div onMouseDown={onDragStart} className={isMobile ? '' : (isDragging ? 'cursor-grabbing' : 'cursor-grab')}
                 style={{ 
                   background: 'linear-gradient(90deg, #1e293b, #334155)', 
-                  padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', 
+                  padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', 
                   justifyContent: 'space-between', color: '#fff', userSelect: 'none'
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <div style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: 4, fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.2)' }}>AI MENTOR</div>
                   <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Personalized Insight</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => speakFeedback(mentorFeedback.speech_text, language)} disabled={isSpeaking} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem' }}>{isSpeaking ? '🔊' : '▶️'}</button>
-                  <button onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <button onClick={() => speakFeedback(mentorFeedback.speech_text, language)} disabled={isSpeaking} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.1rem' }}>{isSpeaking ? '🔊' : '▶️'}</button>
+                  <button onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
                 </div>
               </div>
 
-              <div style={{ padding: '1.5rem', maxHeight: '55vh', overflowY: 'auto' }}>
+              <div style={{ padding: '1.5rem', maxHeight: isMobile ? '65vh' : '55vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#fff' }}>👩‍🏫</div>
                   <div>
@@ -290,7 +319,7 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
                 </div>
 
                 <div style={{ 
-                  fontSize: '0.9rem', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap',
+                  fontSize: '0.95rem', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap',
                   padding: '1.25rem', background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0',
                   boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                 }}>
@@ -298,9 +327,9 @@ export default function InlineExam({ topic, userId, language = 'English', onComp
                 </div>
               </div>
 
-              <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Hold top bar to move window</span>
-                <button className="btn-ce" onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderRadius: 8, background: '#f1f5f9', fontWeight: 700 }}>Close Window</button>
+              <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: isMobile ? '2.5rem' : '1rem' }}>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{isMobile ? 'AI Mentor Guidance' : 'Hold top bar to move window'}</span>
+                <button className="btn-ce" onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem', borderRadius: 10, background: '#f1f5f9', fontWeight: 700 }}>Close & Review</button>
               </div>
             </div>
           </div>
