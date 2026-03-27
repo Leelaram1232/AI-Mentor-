@@ -374,96 +374,86 @@ export default function LearnTab() {
                        </div>
                      </div>
 
-                     {/* Video + NotePad side by side */}
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginTop: '1.5rem' }}>
-                       {/* Tutorial Videos */}
-                       <div>
-                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                           <span style={{ fontSize: '1.3rem' }}>📺</span> Tutorial Videos
-                         </h4>
-                         {loadingVideo === cacheKey ? (
-                           <div className="glass-panel" style={{ height: 220, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
-                             <div className="ai-loader" style={{ width: 40, height: 40, marginBottom: '1rem' }}>
-                               <div className="ai-ring"></div>
+                     <div style={{ marginTop: '1.5rem', display: 'grid', gap: '2rem' }}>
+                       {loadingVideo === cacheKey ? (
+                         <div className="glass-panel" style={{ height: 180, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
+                           <div className="ai-loader" style={{ width: 40, height: 40, marginBottom: '1rem' }}><div className="ai-ring"></div></div>
+                           <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Loading tutorials...</span>
+                         </div>
+                       ) : validVideos.length > 0 ? (
+                         validVideos.slice(0, 2).map((vid, vIdx) => (
+                           <div key={vid.videoId || vIdx} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                             {/* Video Card */}
+                             <div className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
+                               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
+                                 {vid.embedUrl ? (
+                                   <iframe src={vid.embedUrl} title={vid.title} loading="lazy"
+                                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                     referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
+                                 ) : (
+                                   <a href={vid.watchUrl} target="_blank" rel="noopener noreferrer"
+                                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: vid.thumbnail ? `url(${vid.thumbnail}) center/cover` : '#ff0000', textDecoration: 'none' }}>
+                                     <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', color: '#fff' }}>▶</div>
+                                   </a>
+                                 )}
+                               </div>
+                               <div style={{ padding: '0.75rem' }}>
+                                 <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: 2, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{vid.title}</div>
+                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{vid.channelName}</div>
+                               </div>
                              </div>
-                             <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Loading tutorials...</span>
-                             <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial')} target="_blank" rel="noopener noreferrer"
-                               style={{ marginTop: '0.75rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube now</a>
+                             
+                             {/* NotePad for this video */}
+                             <NotePad 
+                               initialValue={notes} 
+                               onSave={(val) => handleNoteChange(cacheKey, val)} 
+                               onDownload={() => downloadNotesAsPDF(item)}
+                               itemTitle={`${item.title} - Video ${vIdx + 1}`}
+                             />
                            </div>
-                         ) : validVideos.length > 0 ? (
-                           <div style={{ display: 'grid', gap: '1.25rem' }}>
-                             {validVideos.slice(0, 2).map((vid, vIdx) => (
-                               <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
-                                 <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
-                                   {vid.embedUrl ? (
-                                     <iframe src={vid.embedUrl} title={vid.title} loading="lazy"
-                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                       referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
-                                   ) : (
-                                     <a href={vid.watchUrl} target="_blank" rel="noopener noreferrer"
-                                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: vid.thumbnail ? `url(${vid.thumbnail}) center/cover` : 'linear-gradient(135deg, #ff0000, #cc0000)', textDecoration: 'none' }}>
-                                       <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', color: '#fff' }}>▶</div>
-                                     </a>
-                                   )}
-                                 </div>
-                                 <div style={{ padding: '0.85rem' }}>
-                                   <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>{vid.title}</div>
-                                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-                                     <span>{vid.channelName}</span>
-                                     {vid.views && <span>👁️ {vid.views}</span>}
-                                   </div>
-                                 </div>
+                         ))
+                       ) : (
+                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                           <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial')} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                             <div className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                               <div style={{ height: 160, background: 'linear-gradient(135deg, #ff0000, #cc0000)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                 <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>▶️</div>
                                </div>
-                             ))}
-                           </div>
-                         ) : (
-                           <a href={'https://www.youtube.com/results?search_query=' + encodeURIComponent(item.title + ' tutorial ' + (language !== 'English' ? 'in ' + language : ''))}
-                             target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'block' }}>
-                             <div className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer' }}>
-                               <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: 'linear-gradient(135deg, #ff0000, #cc0000)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', backdropFilter: 'blur(10px)' }}>▶️</div>
-                                 <span style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>Watch on YouTube</span>
-                               </div>
-                               <div style={{ padding: '1rem', textAlign: 'center' }}>
-                                 <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 4, color: 'var(--text-primary)' }}>{item.title} — Tutorial</div>
-                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Click to search on YouTube{language !== 'English' ? ` in ${language}` : ''}</div>
+                               <div style={{ padding: '1rem', flex: 1 }}>
+                                 <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>Watch Tutorial on YouTube</div>
+                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Click to search for "{item.title}"</div>
                                </div>
                              </div>
                            </a>
-                         )}
-                       </div>
-
-                       {/* NotePad — side by side with video */}
-                       <NotePad 
-                         initialValue={notes} 
-                         onSave={(val) => handleNoteChange(cacheKey, val)} 
-                         onDownload={() => downloadNotesAsPDF(item)}
-                         itemTitle={item.title}
-                       />
+                           <NotePad 
+                             initialValue={notes} 
+                             onSave={(val) => handleNoteChange(cacheKey, val)} 
+                             onDownload={() => downloadNotesAsPDF(item)}
+                             itemTitle={item.title}
+                           />
+                         </div>
+                       )}
                      </div>
 
-                     {/* Exam — full width below video+notepad */}
-                     <div style={{ marginTop: '2rem' }}>
-                       <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                         <span style={{ fontSize: '1.3rem' }}>📝</span> Topic Exam
+                     {/* Exam (Assessment Test) — Below everything */}
+                     <div style={{ marginTop: '2.5rem' }}>
+                       <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '1.5rem', textAlign: 'center', color: 'var(--primary-blue)' }}>
+                         🎯 Topic Assessment Test
                        </h4>
                        <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => { refreshProfile(); }} />
                      </div>
 
                      {item.category === 'Projects' && (
-                       <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 16, border: '1px solid var(--border-color)' }}>
-                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>🚀 Project Assets & Inspiration</h4>
+                       <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--primary-blue-light)', borderRadius: 20, border: '1px solid var(--border-color)' }}>
+                         <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem' }}>🚀 Project Briefing</h4>
                          <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-                           <img src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} alt="Project cover" 
-                             style={{ width: 240, height: 140, objectFit: 'cover', borderRadius: 12, border: '1px solid rgba(0,0,0,0.1)' }} />
-                           <div style={{ flex: 1, minWidth: 250 }}>
-                             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
-                               Find reference code and design inspiration for <strong>{item.title}</strong>.
-                             </p>
-                             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                               <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>🐙 GitHub</a>
-                               <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>💻 CodePen</a>
+                           <img src={`https://picsum.photos/seed/${item.day_number || item.id}/600/400`} alt="Project" style={{ width: 180, height: 110, objectFit: 'cover', borderRadius: 12 }} />
+                           <div style={{ flex: 1 }}>
+                             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Build a project based on <strong>{item.title}</strong> using the resources below.</p>
+                             <div style={{ display: 'flex', gap: '0.75rem' }}>
+                               <a href={`https://github.com/search?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#24292e', color: '#fff', padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: 8 }}>GitHub</a>
+                               <a href={`https://codepen.io/search/pens?q=${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="btn-ce" style={{ background: '#000', color: '#fff', padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: 8 }}>CodePen</a>
                              </div>
                            </div>
                          </div>
