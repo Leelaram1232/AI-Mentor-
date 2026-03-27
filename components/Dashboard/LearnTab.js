@@ -441,7 +441,7 @@ export default function LearnTab() {
                        <h4 style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: '1.5rem', textAlign: 'center', color: 'var(--primary-blue)' }}>
                          🎯 Topic Assessment Test
                        </h4>
-                       <InlineExam topic={item.title} userId={user.id} onComplete={(s, t) => { refreshProfile(); }} />
+                        <InlineExam topic={item.title} userId={user.id} language={language} onComplete={(s, t) => { refreshProfile(); }} />
                      </div>
 
                      {item.category === 'Projects' && (

@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { generateExam, analyzeExamPerformance } from '@/utils/groqApi';
 import { addXP, logLearningActivity, awardBadge } from '@/utils/authClient';
 
-export default function InlineExam({ topic, userId, onComplete }) {
+export default function InlineExam({ topic, userId, language = 'English', onComplete }) {
   const [state, setState] = useState('idle'); // idle, loading, taking, results
   const [questions, setQuestions] = useState([]);
   const [qIdx, setQIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [score, setScore] = useState(0);
-  const [mentorFeedback, setMentorFeedback] = useState('');
+  const [mentorFeedback, setMentorFeedback] = useState(null); // { english_text, speech_text }
   const [analyzing, setAnalyzing] = useState(false);
   const [pos, setPos] = useState({ x: 20, y: 150 }); 
   const [isDragging, setIsDragging] = useState(false);
@@ -54,14 +54,14 @@ export default function InlineExam({ topic, userId, onComplete }) {
         setPos({ x, y: 150 });
       }
 
-      // Get AI Mentor's deep analysis
-      const feedback = await analyzeExamPerformance(topic, s, questions.length, resultDetails);
-      setMentorFeedback(feedback || 'Great job completing the exam! Focus on the concepts where you made mistakes to improve further.');
+      // Get AI Mentor's dual-language analysis
+      const feedbackObj = await analyzeExamPerformance(topic, s, questions.length, resultDetails, language);
+      setMentorFeedback(feedbackObj);
       setAnalyzing(false);
 
-      // Auto-speak feedback
-      if (feedback) {
-        speakFeedback(feedback);
+      // Speak feedback in user's language
+      if (feedbackObj?.speech_text) {
+        speakFeedback(feedbackObj.speech_text, language);
       }
 
       const xp = s * 10;
@@ -79,14 +79,28 @@ export default function InlineExam({ topic, userId, onComplete }) {
     }
   };
 
-  const speakFeedback = (text) => {
+  const speakFeedback = (text, langPref = 'English') => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Stop current
-      const utterance = new SpeechSynthesisUtterance(text.substring(0, 500)); // Limit length for speed
+      window.speechSynthesis.cancel(); 
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Set correct language code
+      const isTelugu = langPref.toLowerCase() === 'telugu';
+      utterance.lang = isTelugu ? 'te-IN' : 'en-US';
+
+      // Try to find a better human-sounding voice
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        // Filter for Telugu voices if needed, or premium English voices
+        const targetVoice = voices.find(v => v.lang.includes(isTelugu ? 'te' : 'en') && (v.name.includes('Google') || v.name.includes('Premium')));
+        if (targetVoice) utterance.voice = targetVoice;
+      }
+
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.1; // Teacher-like pitch
+      utterance.rate = isTelugu ? 0.9 : 1.0; // Telugu usually sounds better slightly slower
+      utterance.pitch = 1.05;
+      
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -261,8 +275,8 @@ export default function InlineExam({ topic, userId, onComplete }) {
                   <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Personalized Insight</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => speakFeedback(mentorFeedback)} disabled={isSpeaking} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem' }}>{isSpeaking ? '🔊' : '▶️'}</button>
-                  <button onClick={() => { stopSpeaking(); setMentorFeedback(''); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>
+                  <button onClick={() => speakFeedback(mentorFeedback.speech_text, language)} disabled={isSpeaking} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem' }}>{isSpeaking ? '🔊' : '▶️'}</button>
+                  <button onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
                 </div>
               </div>
 
@@ -270,22 +284,23 @@ export default function InlineExam({ topic, userId, onComplete }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#fff' }}>👩‍🏫</div>
                   <div>
-                    <h4 style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>Mentor Analysis</h4>
-                    <div style={{ fontSize: '0.7rem', color: isSpeaking ? 'var(--success-green)' : 'var(--text-secondary)', fontWeight: 600 }}>{isSpeaking ? 'Currently Speaking...' : 'By Leela Ram Samavedam (2026)'}</div>
+                    <h4 style={{ fontWeight: 800, margin: 0, color: 'var(--text-primary)', fontSize: '1rem' }}>Mentor Analysis (English)</h4>
+                    <div style={{ fontSize: '0.7rem', color: isSpeaking ? 'var(--success-green)' : 'var(--text-secondary)', fontWeight: 600 }}>{isSpeaking ? `Speaking in ${language}...` : 'Professional feedback for deep learning'}</div>
                   </div>
                 </div>
 
                 <div style={{ 
                   fontSize: '0.9rem', lineHeight: '1.6', color: '#334155', whiteSpace: 'pre-wrap',
-                  padding: '1rem', background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0'
+                  padding: '1.25rem', background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                 }}>
-                  {mentorFeedback}
+                  {mentorFeedback.english_text}
                 </div>
               </div>
 
               <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Drag header to move window</span>
-                <button className="btn-ce" onClick={() => { stopSpeaking(); setMentorFeedback(''); }} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderRadius: 8, background: '#f1f5f9' }}>Close Window</button>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Hold top bar to move window</span>
+                <button className="btn-ce" onClick={() => { stopSpeaking(); setMentorFeedback(null); }} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderRadius: 8, background: '#f1f5f9', fontWeight: 700 }}>Close Window</button>
               </div>
             </div>
           </div>
@@ -329,7 +344,7 @@ export default function InlineExam({ topic, userId, onComplete }) {
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
           <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 12, fontWeight: 700 }}>🔄 Retake Exam</button>
-          <button className="btn-ce btn-ce-secondary" onClick={() => { stopSpeaking(); setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 12, fontWeight: 700 }}>Finish Session</button>
+          <button className="btn-ce btn-ce-secondary" onClick={() => { stopSpeaking(); setState('idle'); setMentorFeedback(null); }} style={{ borderRadius: 12, fontWeight: 700 }}>Finish Session</button>
         </div>
       </div>
     );

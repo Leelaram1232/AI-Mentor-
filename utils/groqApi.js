@@ -635,7 +635,9 @@ Generate 8-12 career positions with title, relevance (0-100), impact (0-100), de
 /**
  * AI Mentor analyzes exam performance and provides 1-on-1 tutoring/guidance.
  */
-export async function analyzeExamPerformance(topic, score, total, results) {
+export async function analyzeExamPerformance(topic, score, total, results, language = 'English') {
+  const isTelugu = language === 'Telugu' || language === 'telugu';
+  
   const prompt = `Topic: ${topic}
 Score: ${score}/${total} (${Math.round((score / total) * 100)}%)
 
@@ -643,13 +645,30 @@ Question Details:
 ${results.map((r, i) => `Q${i + 1}: ${r.question}\nCorrect: ${r.isCorrect ? 'Yes' : 'No'}\nExplanation: ${r.explanation}`).join('\n\n')}
 
 ROLE: You are the AI Career Mentor, created in 2026 by Leela Ram Samavedam. Conduct a deep, teacher-like analysis.
-GOAL: Provide a 1-on-1 coaching response. If the user failed (<60%), be highly encouraging but identify exactly where they need to study. If they passed, challenge them with deeper insights into the topic.
-TONE: Warm, professional, and deeply insightful. Use headings and bullet points. Mention their specific mistakes and how to fix them.`;
 
-  return await callGroq(
-    'You are a highly premium AI Career Mentor. Provide deep teaching, guidance, and encouragement.',
-    prompt,
-    { temperature: 0.7, maxTokens: 1500 }
-  );
+GOAL: Provide a 1-on-1 coaching response.
+1. ALWAYS provide a high-quality "english_text" analysis for professional reading.
+2. ${isTelugu ? 'In addition, provide a "telugu_text" version that is NOT a literal word-for-word translation. It should be warm, human-like, and conversational Telugu - like a teacher talking casually to a student.' : 'Provide a conversational version for speech.'}
+
+FORMAT: Return ONLY a JSON object:
+{
+  "english_text": "...The technical analysis with headings/bullets...",
+  "speech_text": "...${isTelugu ? 'The natural, human-like Telugu coaching script' : 'The natural, conversational English coaching script'}..."
+}`;
+
+  try {
+    const res = await callGroq(
+      'You are a highly premium AI Career Mentor. You respond ONLY in valid JSON format.',
+      prompt,
+      { temperature: 0.7, maxTokens: 1800 }
+    );
+    
+    // Attempt to parse JSON
+    const cleanRes = res.replace(/```json|```/g, '').trim();
+    return JSON.parse(cleanRes);
+  } catch (e) {
+    console.error('Mentor parsing failed:', e);
+    return { english_text: res, speech_text: res };
+  }
 }
 
