@@ -168,9 +168,52 @@ export default function InlineExam({ topic, userId, onComplete }) {
     const passed = pct >= 60;
 
     return (
-      <div className="glass-panel fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
+      <div className="fade-in-up" style={{ borderRadius: 16, padding: '1.5rem', border: `2px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`, position: 'relative' }}>
         
-        {/* Mentor's Transparent Guidance Overlay (if analyzing) */}
+        {/* Immersive AI Mentor Overlay (Transparent Chat Box + Blur) */}
+        {mentorFeedback && !analyzing && (
+          <div style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(12px)', 
+            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+            padding: '2rem'
+          }}>
+            <div className="glass-panel fade-in-right" style={{ 
+              width: '100%', maxWidth: '500px', maxHeight: '85vh', 
+              borderRadius: 32, padding: '2.5rem', border: '1px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(45deg, var(--primary-blue), #9333ea)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>🧠</div>
+                <div>
+                  <h4 style={{ fontWeight: 800, margin: 0, color: 'var(--primary-blue)', fontSize: '1.2rem' }}>AI Career Mentor</h4>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Analysis by Leela Ram Samavedam (2026)</div>
+                </div>
+              </div>
+
+              <div style={{ 
+                flex: 1, overflowY: 'auto', paddingRight: '1rem', fontSize: '1rem', 
+                lineHeight: '1.7', color: 'white', whiteSpace: 'pre-wrap' 
+              }}>
+                <div style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: 16, background: passed ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}` }}>
+                  <div style={{ fontWeight: 800, fontSize: '1.4rem', color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}% - {passed ? 'Passed!' : 'Try Again'}</div>
+                  <div style={{ fontSize: '0.85rem' }}>{score}/{questions.length} correct concepts mastered</div>
+                </div>
+                {mentorFeedback}
+              </div>
+
+              <button className="btn-ce btn-ce-primary" onClick={() => setMentorFeedback('')} style={{ 
+                marginTop: '1.5rem', width: '100%', padding: '1rem', borderRadius: 16, 
+                fontWeight: 800, fontSize: '1rem', boxShadow: '0 10px 20px -5px rgba(59,130,246,0.3)' 
+              }}>
+                🚀 Got it, Mentor! Review Detailed Answers
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Overlay */}
         {analyzing && (
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)', zIndex: 10, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div className="ai-loader" style={{ width: 50, height: 50, marginBottom: '1rem' }}><div className="ai-ring"></div></div>
@@ -179,63 +222,34 @@ export default function InlineExam({ topic, userId, onComplete }) {
         )}
 
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', margin: '0 auto 1.25rem',
-            background: passed ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
-            border: `4px solid ${passed ? 'var(--success-green)' : 'var(--error-red)'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <span style={{ fontSize: '1.5rem', fontWeight: 900, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>{pct}%</span>
-          </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: passed ? 'var(--success-green)' : 'var(--error-red)' }}>
-            {passed ? 'Exam Passed! 🎉' : 'Needs Review — 60% Required'}
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            {score}/{questions.length} correct ({pct}%) • {passed ? `+${score * 10} XP earned!` : 'Score at least 60% to pass.'}
-          </p>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Question Review</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Review each question to master the topic</p>
         </div>
 
-        {/* AI Mentor's Guidance - The Transparent "Screen" effect */}
-        {mentorFeedback && !analyzing && (
-          <div style={{ 
-            marginTop: '1.5rem', marginBottom: '2rem', padding: '2rem', 
-            background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(147,51,234,0.08) 100%)', 
-            borderRadius: 20, border: '1px solid rgba(59,130,246,0.2)',
-            backdropFilter: 'blur(10px)', boxShadow: '0 8px 32px rgba(0,0,0,0.05)'
-          }}>
-            <h4 style={{ fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--primary-blue)' }}>
-              <span style={{ fontSize: '1.4rem' }}>🧠</span> Mentor's Personalized Guidance
-            </h4>
-            <div style={{ 
-              fontSize: '0.95rem', lineHeight: '1.7', color: 'var(--text-primary)', 
-              maxHeight: '400px', overflowY: 'auto', paddingRight: '1rem',
-              whiteSpace: 'pre-wrap'
-            }}>
-              {mentorFeedback}
-            </div>
-          </div>
-        )}
-
         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <h4 style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Detailed Question Review</h4>
           {questions.map((q, i) => {
             const correct = answers[i] === q.correctIndex;
             return (
-              <div key={i} style={{ padding: '1rem', borderRadius: 12,
-                border: `1px solid ${correct ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                background: correct ? 'rgba(16,185,129,0.02)' : 'rgba(239,68,68,0.02)' }}>
+              <div key={i} className="glass-panel" style={{ padding: '1rem', borderRadius: 12, border: `1px solid ${correct ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                  <span style={{ flexShrink: 0 }}>{correct ? '✅' : '❌'}</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{q.question}</span>
+                  <span style={{ fontSize: '1.1rem' }}>{correct ? '✅' : '❌'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 6 }}>{q.question}</div>
+                    <div style={{ fontSize: '0.85rem' }}>
+                       {!correct && <div style={{ color: 'var(--error-red)', fontWeight: 600, marginBottom: 4 }}>Your answer: {q.options[answers[i]]}</div>}
+                       <div style={{ color: 'var(--success-green)', fontWeight: 700 }}>Correct: {q.options[q.correctIndex]}</div>
+                       <div style={{ marginTop: 8, padding: '0.75rem', borderRadius: 8, background: 'rgba(0,0,0,0.2)', color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem' }}>💡 {q.explanation}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginTop: '1.5rem' }}>
-          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 10, fontWeight: 600, padding: '0.75rem 1.5rem' }}>🔄 Retake Exam</button>
-          <button className="btn-ce btn-ce-secondary" onClick={() => { setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 10, fontWeight: 600, padding: '0.75rem 1.5rem' }}>Finish Session</button>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button className="btn-ce btn-ce-primary" onClick={startExam} style={{ borderRadius: 10, fontWeight: 600 }}>🔄 Retake Exam</button>
+          <button className="btn-ce btn-ce-secondary" onClick={() => { setState('idle'); setMentorFeedback(''); }} style={{ borderRadius: 10, fontWeight: 600 }}>Back to Roadmap</button>
         </div>
       </div>
     );
