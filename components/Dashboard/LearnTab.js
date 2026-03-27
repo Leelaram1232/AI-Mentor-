@@ -374,7 +374,7 @@ export default function LearnTab() {
                        </div>
                      </div>
 
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', marginTop: '1.5rem' }}>
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', marginTop: '1.5rem' }}>
                        {/* Tutorial Videos */}
                        <div>
                          <h4 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -390,7 +390,7 @@ export default function LearnTab() {
                                style={{ marginTop: '0.75rem', color: 'var(--primary-blue)', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>▶️ Watch on YouTube now</a>
                            </div>
                          ) : validVideos.length > 0 ? (
-                           <div style={{ display: 'grid', gap: '1.25rem' }}>
+                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
                              {validVideos.slice(0, 2).map((vid, vIdx) => (
                                <div key={vid.videoId || vIdx} className="glass-panel hover-lift" style={{ borderRadius: 16, overflow: 'hidden' }}>
                                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>

@@ -13,7 +13,7 @@ export default function InlineExam({ topic, userId, onComplete }) {
   const startExam = async () => {
     setState('loading');
     try {
-      const qs = await generateExam(topic, 'intermediate', 5);
+      const qs = await generateExam(topic, 'intermediate', 10);
       setQuestions(qs);
       setAnswers({});
       setQIdx(0);
@@ -49,7 +49,7 @@ export default function InlineExam({ topic, userId, onComplete }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>📝 Topic Assessment</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>5 AI-generated questions • 60% to pass • Earn up to 50 XP</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>10 AI-generated questions • 60% to pass • Earn up to 100 XP</div>
           </div>
           <span className="meta-badge" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', fontWeight: 700, fontSize: '0.75rem' }}>⚡ Required</span>
         </div>
