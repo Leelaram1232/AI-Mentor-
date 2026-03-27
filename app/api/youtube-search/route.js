@@ -49,7 +49,7 @@ async function searchYouTubeAPI(query, language, maxResults) {
     part: 'snippet',
     q: query,
     type: 'video',
-    order: 'viewCount',
+    order: 'relevance',
     maxResults: String(maxResults),
     relevanceLanguage: langCode,
     videoDuration: 'medium',

@@ -6,9 +6,8 @@
  */
 export function buildYouTubeSearchQuery(topic, language = 'English') {
   const langSuffix = (language && language !== 'English') ? ` in ${language}` : '';
-  const keywords = ['tutorial', 'course', 'explained', 'for beginners'];
-  const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
-  return `${topic} ${randomKeyword}${langSuffix}`;
+  // Use exact topic + "tutorial" for precise results — no random keywords
+  return `"${topic}" tutorial${langSuffix}`;
 }
 
 /**
